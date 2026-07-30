@@ -1,5 +1,5 @@
 From Stdlib.Logic Require Import ClassicalFacts.
-From ltl Require Import ltl ltl_fixpoints.
+From ltl Require Import ltl ltl_fixpoints ltl_now.
 
 Axiom excluded_middle : ∀ P, P ∨ ¬ P.
 
@@ -21,6 +21,7 @@ Qed.
 Section classical.
   Context {S L : Type}.
   Context {Rel : S → L → S → Prop}.
+  Context `{HLTL : LTL S L Rel}.
 
   Notation tProp := (tProp S L Rel).
 
@@ -53,6 +54,39 @@ Section classical.
     iDestruct (ltl_excluded_middle Q) as "[HQ|HQ]".
     { iEval (rewrite ltl_until_unfold). iLeft. done. }
     by iApply "IH".
+  Qed.
+
+  Lemma ltl_terminates_dec :
+    ⊢@{tProp} ◊ ↯ ∨ ∞.
+  Proof.
+    iDestruct (ltl_excluded_middle (◊ ↯))%I as "[?|?]"; [by iLeft|].
+    iRight. rewrite ltl_not_eventually_always_not. done.
+  Qed.
+
+  Lemma inf_live' b :
+    (∀ s b' s', Rel s b' s' → ∃ s', Rel s b s') →
+    ∞ ⊢@{tProp} (□ ◊ is_live b)%I.
+  Proof.
+    iIntros (Hrel) "#H !>".
+    rewrite /ltl_terminated. rewrite ltl_now_not.
+    iDestruct (ltl_st with "H") as (s) "Hs".
+    { intros. destruct osl; done. }
+    iModIntro.
+    iAssert (⌜∃ b s', Rel s b s'⌝)%I as %(?&?&?).
+    { assert (reducible s ∨ ¬ reducible s) as [(?&?&Hred)|Hred];
+        [|iPureIntro; eexists _,_; eauto|].
+      { apply excluded_middle. }      
+      iDestruct (trace_terminates with "Hs") as "Hs"; [done|].
+      iExFalso.
+      rewrite -ltl_false_next. iModIntro.
+      iCombine "Hs H" as "Hs".
+      iDestruct (ltl_now_pure with "Hs") as %[??].
+      destruct x as [[]|]; simpl in *; try naive_solver; destruct H; simplify_eq. }
+    iApply (ltl_now_mono with "Hs").
+    intros. simpl.
+    destruct osl as [[]|]; simpl in *; simplify_eq; [|naive_solver].
+    eapply Hrel.
+    apply H.
   Qed.
 
 End classical.

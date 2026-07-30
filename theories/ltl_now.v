@@ -1,4 +1,4 @@
-From ltl Require Import ltl.
+From ltl Require Import ltl ltl_fixpoints.
 
 (* TODO: Understand the need for this *)
 Import tProp.
@@ -194,6 +194,23 @@ Section ltl_now_state_label_lemmas.
     rewrite ltl_now_unseal.
     unseal.
     intros [[[]|]] _ H2 H3; inversion H2; inversion H3; simplify_eq; try done.
+  Qed.
+
+  Lemma trace_terminates `{HRel: LTL S L Rel} s :
+    ¬ (reducible s) → ↓s s ⊢ ○ ↯ : tProp.
+  Proof.
+    intros Hsteps.
+    constructor.
+    intros [[tr|] tr_wf]; last first.
+    { rewrite ltl_now_unseal.
+      intros Hnow. inversion Hnow. }
+    rewrite /ltl_terminated ltl_now_unseal ltl_next_unseal.
+    intros Hnow.
+    destruct tr as [|]; inversion Hnow; simpl in *; simplify_eq.
+    { rewrite /ltl_next_def. rewrite /wf_tail. constructor. }
+    rewrite /ltl_next_def. rewrite /wf_tail.
+    exfalso. apply empty_ind. inversion tr_wf. simplify_eq. simpl in *. simplify_eq.
+    exfalso. apply Hsteps. eexists _, _. apply H3.
   Qed.
 
   Lemma trace_steps `{HRel: LTL S L Rel} (s:S) :
@@ -440,3 +457,30 @@ Section ltl_now_label_prod.
   Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_label_prod_and. Qed.
 
 End ltl_now_label_prod.
+
+Section misc.
+  Context {S L : Type}.
+  Context {Rel : S → L → S → Prop}.
+  Context `{HLTL : !LTL S L Rel}.
+
+  Notation tProp := (tProp S L Rel).
+
+  Definition is_live (l:L) : tProp :=
+    ↓s' (λ s, (∃ s', Rel s l s'):Prop).
+
+  Lemma inf_live b :
+    (∀ s, ∃ s', Rel s b s') →
+    ∞ ⊢ (□ ◊ is_live b)%I.
+  Proof.
+    iIntros (Hrel) "#H !>".
+    rewrite /ltl_terminated. rewrite ltl_now_not.
+    iDestruct (ltl_st with "H") as (s) "Hs".
+    { intros. destruct osl; done. }
+    iModIntro.
+    iApply (ltl_now_mono with "Hs").
+    intros. simpl.
+    destruct osl as [[]|]; simpl in *; simplify_eq; [|naive_solver].
+    done.
+  Qed.
+
+End misc.

@@ -1,4 +1,4 @@
-From ltl Require Import ltl ltl_fixpoints ltl_now.
+From ltl Require Import ltl ltl_fixpoints ltl_now classical.
 
 Import tProp.
 
@@ -95,7 +95,7 @@ Section examples.
   Lemma bar (P Q : tProp) :
     □ P ∧ ◊ (P → ○ ◊ Q) ⊢ ◊ Q.
   Proof.
-    iIntros "[#HP HPQ]". 
+    iIntros "[#HP HPQ]".
     iMod "HPQ" as "HPQ".
     iApply ltl_next_eventually.
     by iApply ("HPQ" with "HP").
@@ -141,7 +141,7 @@ Section examples.
   Proof.
     iIntros "[#HP1 HP2]".
     iApply ltl_always_eventually_intro. iFrame.
-    iIntros "!> HP". 
+    iIntros "!> HP".
     iDestruct ("HP1" with "HP") as "HP".
     iIntros "!>".
     iApply ltl_eventually_intro_next.
@@ -152,7 +152,7 @@ Section examples.
     P ∪ Q ∧ (¬ □ P) ⊢ ◊ Q.
   Proof. rewrite -ltl_until_eventually. apply bi.and_elim_l. Qed.
 
-  Lemma bar' (P Q R : Prop) : 
+  Lemma bar' (P Q R : Prop) :
     P ∧ (P -> Q) -> Q.
   Proof.
     intros [HP HPQ].
@@ -160,13 +160,13 @@ Section examples.
     apply HP.
   Qed.
 
-  Lemma bar'' (P Q R : tProp) : 
+  Lemma bar'' (P Q R : tProp) :
     P ∧ (P → ◊ Q) ⊢ ◊ Q.
   Proof.
     iIntros "[HP HPQ]".
     iDestruct ("HPQ" with "HP") as "HQ".
     iApply "HQ".
-  Qed.  
+  Qed.
 
   Lemma foo' (P Q R : tProp) :
     ○ P ∧ □ ○ (P → □ Q) ∧ ◊ ○ (Q → R) ⊢ ○ ◊ R.
@@ -200,7 +200,7 @@ Section simple_ex.
   Notation tProp := (tProp state label steps).
 
   Instance simple_ltl : LTL state label steps.
-  Proof. 
+  Proof.
     constructor. intros.
     destruct (decide (s' = s + 1)).
     - subst. constructor 1. destruct l. constructor.
@@ -217,9 +217,9 @@ Section simple_ex.
   Qed.
 
   Lemma eventually_n (n:nat) : ↓s 0 ⊢ ◊ ↓s n : tProp.
-  Proof.   
+  Proof.
     assert (∃ i j, i = 0 ∧ n-j = i ∧ n >= j) as (i&j&<-&H1&H2).
-    { eexists _, n. split; [done|]. lia. } 
+    { eexists _, n. split; [done|]. lia. }
     iInduction j as [|j IH] forall (i H1 H2).
     { simplify_eq. rewrite right_id. iIntros "H". by iModIntro. }
     iIntros "H".
@@ -243,16 +243,16 @@ Section advanced_ex.
   Notation tProp := (tProp state' label' steps').
 
   Instance advanced_ltl : LTL state' label' steps'.
-  Proof. 
+  Proof.
     constructor. intros.
     destruct s as [i b].
     destruct (decide (b=l)); subst.
     - destruct (decide (s' = (i + 1, negb l))).
       + subst. constructor 1. constructor.
       + constructor 2. intros H. inversion H; subst. done. by destruct l.
-    - destruct (decide (s' = (i, b))).      
+    - destruct (decide (s' = (i, b))).
       + subst. constructor 1. destruct b, l; [naive_solver|..|naive_solver]; constructor.
-      + constructor 2. intros H. inversion H; subst. done. done. 
+      + constructor 2. intros H. inversion H; subst. done. done.
   Qed.
 
   Axiom fair : ∀ (b:bool), ⊢ ◊ ↓l b : tProp.
@@ -317,3 +317,79 @@ Section advanced_ex.
   Qed.
 
 End advanced_ex.
+
+Section yes_no_ex.
+
+  Definition yn_state : Set := nat * bool.
+  Definition yn_label : Set := bool.
+  Inductive yn_steps : yn_state → yn_label → yn_state → Prop :=
+  | yn_step_succ i b : i > 0 → yn_steps (i,b) b (i-1,negb b)
+  | yn_step_fail i b : i > 0 → yn_steps (i,b) (negb b) (i,b).
+
+  Notation tProp := (tProp yn_state yn_label yn_steps).
+
+  Instance yn_ltl : LTL yn_state yn_label yn_steps.
+  Proof. constructor. intros. apply make_decision. Qed.
+  Lemma inf_live'' b :
+    ∞ ⊢@{tProp} □ ◊ is_live b.
+  Proof.
+    iApply inf_live'.
+    intros. inversion H; [destruct b'|destruct b0]; destruct b; simplify_eq; eexists _; econstructor; lia.
+  Qed.
+
+  Axiom yn_fair : ∀ (b:bool), ⊢ (□ ◊ is_live b) → ◊ ↓l b : tProp.
+
+  Lemma yn_step_b b i :
+    ↓s (S i,b) ⊢ ↓l b ∧ ○ ↓s (S i - 1,negb b) ∨ ↓l (negb b) ∧ ○ (↓s (S i,b)) : tProp.
+  Proof.
+    iIntros "H".
+    iDestruct (trace_steps with "H") as (l s' Hsteps') "[Hl Hs]";
+      [by eexists _, _; constructor; lia|].
+    inversion Hsteps'; simplify_eq.
+    - iLeft. iFrame.
+    - iRight. iFrame.
+  Qed.
+
+  Lemma yn_step_b_label b i :
+    ↓s (S i,b) ∧ ↓l b ⊢  ○ ↓s (S i - 1, negb b): tProp.
+  Proof.
+    iIntros "[Hs Hl]".
+    iDestruct (trace_steps_label with "[$Hs $Hl]") as (s' Hsteps') "Hs";
+      [by eexists _, _; constructor; lia|].
+    inversion Hsteps'; simplify_eq.
+    - done.
+    - by destruct b.
+  Qed.
+
+  Theorem eventually_terminates (n:nat) :
+    ↓fs fst n ⊢@{tProp} ◊ ↯.
+  Proof.
+    rewrite (ltl_eventually_intro_now (↓fs fst n)).
+    iInduction n as [|n IHn].
+    { iIntros ">Hs".
+      iDestruct (ltl_now_prod_fst with "Hs") as (b) "Hs".
+      iDestruct (trace_terminates with "Hs") as "Hs".
+      { intros H. inversion H as (?&?&?). inversion H0; lia. }
+      rewrite -ltl_next_eventually. iModIntro. iModIntro. done. }
+    iIntros ">Hs".
+    iDestruct (ltl_now_prod_fst with "Hs") as (b) "Hs".
+    iDestruct ltl_terminates_dec as "[$|#H]".
+    iApply "IHn". iClear "IHn".
+    iDestruct (inf_live'' b with "H") as "#Hlive".
+    iDestruct (yn_fair with "Hlive") as "-#Hsched".
+    iRevert "Hs".
+    iApply (ltl_eventually_ind_strong with "[] Hsched").
+    iIntros "!> [Hl|[_ IH]] Hs".
+    { iDestruct (yn_step_b_label with "[$Hs $Hl]") as "H'".
+      iEval (rewrite -ltl_next_eventually). iModIntro. iModIntro.
+      iApply ltl_now_prod_fst. iExists _.
+      replace (S n - 1) with n by lia. done. }
+    iDestruct (yn_step_b with "Hs") as "[[Hl Hs]|[Hl Hs]]".
+    - iEval (rewrite -ltl_next_eventually). iModIntro. iModIntro.
+      iApply ltl_now_prod_fst. iExists _.
+      replace (S n - 1) with n by lia. done.
+    - iEval (rewrite -ltl_next_eventually). iModIntro.
+      by iApply "IH".
+  Qed.
+
+End yes_no_ex.

@@ -25,7 +25,6 @@ Section classical.
 
   Notation tProp := (tProp S L Rel).
 
-  (* OBS: Needed to unseal definitions *)
   Import tProp.
 
   Lemma ltl_excluded_middle (P : tProp) :
@@ -63,7 +62,7 @@ Section classical.
     iRight. rewrite ltl_not_eventually_always_not. done.
   Qed.
 
-  Lemma inf_live' b :
+  Lemma inf_live_strong b :
     (∀ s b' s', Rel s b' s' → ∃ s', Rel s b s') →
     ∞ ⊢@{tProp} (□ ◊ is_live b)%I.
   Proof.

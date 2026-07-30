@@ -330,10 +330,10 @@ Section yes_no_ex.
 
   Instance yn_ltl : LTL yn_state yn_label yn_steps.
   Proof. constructor. intros. apply make_decision. Qed.
-  Lemma inf_live'' b :
+  Lemma yn_inf_live b :
     ∞ ⊢@{tProp} □ ◊ is_live b.
   Proof.
-    iApply inf_live'.
+    iApply inf_live_strong.
     intros. inversion H; [destruct b'|destruct b0]; destruct b; simplify_eq; eexists _; econstructor; lia.
   Qed.
 
@@ -375,7 +375,7 @@ Section yes_no_ex.
     iDestruct (ltl_now_prod_fst with "Hs") as (b) "Hs".
     iDestruct ltl_terminates_dec as "[$|#H]".
     iApply "IHn". iClear "IHn".
-    iDestruct (inf_live'' b with "H") as "#Hlive".
+    iDestruct (yn_inf_live b with "H") as "#Hlive".
     iDestruct (yn_fair with "Hlive") as "-#Hsched".
     iRevert "Hs".
     iApply (ltl_eventually_ind_strong with "[] Hsched").

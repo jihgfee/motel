@@ -270,26 +270,20 @@ Section after.
   Context {S L : Type}.
   Context {Rel : S → L → S → Prop}.
 
-  Fixpoint foo {A} (n : nat) (f : A → A) (x:A) : A :=
-    match n with
-    | 0 => x
-    | Datatypes.S n => foo n f (f x)
-    end.
-
-  Notation after n t := (foo n tail_trace t).
+  Notation after n t := (Nat.iter n tail_trace t).
 
   Lemma after_nil n : after n ⟨⟩ = (⟨⟩ : trace S L).
   Proof. induction n; [done|]. simpl. rewrite IHn. done. Qed.
 
   Lemma after_singleton n s : after (Datatypes.S n) ⟨ s ⟩ = (⟨⟩ : trace S L).
-  Proof. simpl. apply after_nil. Qed.
+  Proof. simpl. rewrite -Nat.iter_swap. apply after_nil. Qed.
 
   Lemma after_cons n s l (tr : trace_aux S L) : after (Datatypes.S n) (s -[ l ]-> tr) =  after n (Some tr).
-  Proof. simpl. done. Qed.
+  Proof. simpl. rewrite -Nat.iter_swap. done. Qed.
 
   Lemma after_sum_comm n m (tr : trace S L) :
     after n (after m tr) = after m (after n tr).
-  Proof.
+  Proof. 
     revert tr m. induction n; intros tr m.
     { done. }
     revert n tr IHn.
@@ -301,8 +295,8 @@ Section after.
       rewrite -IHn.
       rewrite IHm; [|done].
       destruct t.
-      + simpl. rewrite !after_nil. done.
-      + simpl. done.
+      + rewrite !Nat.iter_succ_r. simpl. rewrite !after_nil. done.
+      + rewrite !Nat.iter_succ_r. done.
     - rewrite !after_nil. done.
   Qed.
 
@@ -318,6 +312,7 @@ Section after.
     f_equiv.
     clear n IHn.
     rewrite after_sum_comm.
+    rewrite !Nat.iter_succ_r.
     simpl. done.
   Qed.
 
@@ -339,7 +334,7 @@ Section after.
     revert tr wf.
     induction n; intros tr wf.
     { done. }
-    simpl. 
+    rewrite Nat.iter_succ_r.
     apply IHn. apply wf_after_tail_wf. done.
   Qed.
 
@@ -355,6 +350,9 @@ Section after.
 
   Lemma wf_after_sum n m tr : wf_after (n+m) tr = wf_after n (wf_after m tr).
   Proof. apply wf_trace_eq. by apply after_sum. Qed.
+
+  Definition wf_head (tr : wf_trace S L Rel) : option (S * option L) :=
+    head_trace (tr_car tr).
 
 End after.
 
@@ -1011,7 +1009,6 @@ Section ltl_axioms.
       + intros HP. apply H. apply HP.
   Qed.
 
-  (* TODO: Unclear if we cannot derive this, but does not seem derivable without EM. *)
   Lemma ltl_next_exists {A} (P : A → tProp) :
     (○ ∃ x, P x)%I ⊢ ∃ x, ○ P x.
   Proof.
@@ -1052,6 +1049,7 @@ Section ltl_axioms.
     iSpecialize ("HP" $! (Datatypes.S n)). done.
   Qed.
 
+  (* TODO: Move *)
   Global Instance ltl_next_iter_proper n : Proper ((≡) ==> (≡)) (@ltl_next_iter S L Rel n).
   Proof.
     intros P Q Heq.
@@ -1351,13 +1349,5 @@ Section ltl_proofmode.
       iIntros "[HPQ HP]". by iApply "HPQ".
   Qed.
 
-  (* Class FromNext' (P Q : tProp) := *)
-  (*   from_next' : ○ P ⊢ Q. *)
-  (* Global Arguments FromNext' _%I _%I : simpl never. *)
-  (* Global Arguments from_next' _%I _%I {_}. *)
-  (* Global Hint Mode FromNext' - ! : typeclass_instances. *)
-
 End ltl_proofmode.
-
-(* Tactic Notation "iNext" := iApply from_next'; iModIntro. *)
 

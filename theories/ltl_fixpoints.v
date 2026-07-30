@@ -61,10 +61,7 @@ Section ltl_until.
   Lemma ltl_until_ind (P Q R : tProp) :
     (Q ∨ (P ∧ ○ (P ∪ Q) ∧ ○ R) ⊢ R) →
     (P ∪ Q ⊢ R).
-  Proof.
-    intros IH.
-    iApply ltl_until_ind_strong. iIntros "!> H". iApply IH. done.
-  Qed.
+  Proof. intros IH. iApply ltl_until_ind_strong. iIntros "!> H". iApply IH. done. Qed.
 
   Lemma ltl_until_intro_now (P Q : tProp) :
     Q ⊢ P ∪ Q.
@@ -518,12 +515,12 @@ Section ltl_until.
     @FromModal ltlI ltlI _ True%type modality_id (P ∪ Q) (P ∪ Q) (Q) | 2.
   Proof. intros _. apply ltl_until_intro_now. Qed.
 
-  (* TODO: Prove these for until instead *)
+  (* TODO: Supply this for until instead *)
+  Global Instance from_next_until (P Q : tProp) : FromNext (P ∪ Q) ((○ P) ∪ (○ Q)) | 2.
+  Proof. rewrite /FromNext. by rewrite ltl_until_next_comm. Qed.
+
   Global Instance from_next_eventually (P : tProp) : FromNext (◊ P) (◊ ○ P).
   Proof. rewrite /FromNext. by rewrite ltl_eventually_next_comm. Qed.
-
-  (* Global Instance from_next_eventually' (P : tProp) : FromNext' (◊ P) (◊ P) | 1. *)
-  (* Proof. rewrite /FromNext'. by rewrite -{2}ltl_next_eventually. Qed. *)
 
 End ltl_until.
 

@@ -412,32 +412,101 @@ Section ltl_until.
     CombineSepAs (◊ P) (◊ Q) (◊ (P ∧ ◊ Q) ∨ ◊ (◊ P ∧ Q)) | 0.
   Proof. rewrite /CombineSepAs. apply ltl_eventually_and_r. Qed.
 
-  Class ltl_until_equiv (P Q R : tProp) :=
-    ltl_until_conv : P ≡ (Q ∪ R)%I.
+  Class IntoUntil (P Q R : tProp) :=
+    into_until : P ⊢ Q ∪ R.
 
-  Global Instance ltl_until_equiv_refl (P Q : tProp) :
-    ltl_until_equiv (P ∪ Q) P Q | 0.
-  Proof. done. Qed.
+  Class FromUntil (P Q R : tProp) :=
+    from_until : P ∪ Q ⊢ R.
 
-  Global Instance ltl_until_equiv_next (P Q R : tProp) :
-    ltl_until_equiv P Q R →
-    ltl_until_equiv (○ P) (○ Q) (○ R) | 2.
+  Class EquivUntil (P Q R : tProp) :=
+    equiv_until : P ≡ (Q ∪ R)%I.
+
+  Global Instance ltl_from_into_until_equiv P Q R :
+    IntoUntil P Q R →
+    FromUntil Q R P →
+    EquivUntil P Q R | 10.
   Proof.
-    intros. rewrite /ltl_until_equiv. rewrite ltl_until_next_comm. by rewrite H.
+    rewrite /IntoUntil /FromUntil /EquivUntil.
+    intros H1 H2.
+    iSplit.
+    - rewrite H1. eauto.
+    - rewrite H2. eauto. 
   Qed.
 
-  Global Instance ltl_eventually_equiv_next' (P Q : tProp) :
-    ltl_until_equiv P True Q →
-    ltl_until_equiv (○ P) True (○ Q) | 1.
+  Global Instance into_until_refl (P Q : tProp) :
+    IntoUntil (P ∪ Q) P Q | 0.
+  Proof. done. Qed.
+
+  Global Instance from_until_refl (P Q : tProp) :
+    FromUntil P Q (P ∪ Q) | 0.
+  Proof. done. Qed.
+
+  (* Global Instance EquivUntil_refl (P Q : tProp) : *)
+  (*   EquivUntil (P ∪ Q) P Q | 0. *)
+  (* Proof. done. Qed. *)
+
+  Global Instance into_until_next (P Q R : tProp) :
+    IntoUntil P Q R →
+    IntoUntil (○ P) (○ Q) (○ R) | 2.
   Proof.
-    intros. rewrite /ltl_until_equiv.
+    intros. rewrite /IntoUntil. rewrite ltl_until_next_comm. by rewrite H.
+  Qed.
+
+  Global Instance from_until_next (P Q R : tProp) :
+    FromUntil P Q R →
+    FromUntil (○ P) (○ Q) (○ R) | 2.
+  Proof.
+    intros. rewrite /FromUntil. rewrite ltl_until_next_comm. by rewrite H.
+  Qed.
+
+  (* Global Instance EquivUntil_next (P Q R : tProp) : *)
+  (*   EquivUntil P Q R → *)
+  (*   EquivUntil (○ P) (○ Q) (○ R) | 2. *)
+  (* Proof. *)
+  (*   intros. rewrite /EquivUntil. rewrite ltl_until_next_comm. by rewrite H. *)
+  (* Qed. *)
+
+  (* Rename to into_eventually? *)
+  Global Instance into_until_next' (P Q : tProp) :
+    IntoUntil P True Q →
+    IntoUntil (○ P) True (○ Q) | 1.
+  Proof.
+    intros. rewrite /IntoUntil.
     rewrite ltl_eventually_next_comm. rewrite H. done.
   Qed.
 
-  Global Instance elim_modal_until p P P' Q R R' :
-    ltl_until_equiv P Q R →
-    ltl_until_equiv P' Q R' →
-    ElimModal True p false modality_persistently P' R' P P.
+  Global Instance from_until_next' (P Q : tProp) :
+    FromUntil True P Q →
+    FromUntil True (○ P) (○ Q) | 1.
+  Proof.
+    intros. rewrite /FromUntil.
+    rewrite ltl_eventually_next_comm. rewrite H. done.
+  Qed.
+
+  Global Instance elim_modal_until p P Q Q' R R' :
+    IntoUntil R' P Q' →
+    FromUntil P Q R →
+    ElimModal True p false modality_persistently R' Q' R (P ∪ Q) | 2.
+  Proof.
+    intros HP HP'.
+    rewrite /ElimModal.
+    iIntros "_ [HP' HP]".
+    destruct p; simpl.
+    - rewrite HP -HP'.
+      iDestruct "HP'" as "#HP'".
+      iDestruct "HP" as "#HP".
+      iEval (rewrite -ltl_until_idemp).
+      by iApply (ltl_until_mono_strong P P Q'); [eauto| |done].
+    - rewrite HP -HP'.
+      iDestruct "HP" as "#HP".
+      iEval (rewrite -ltl_until_idemp).
+      by iApply (ltl_until_mono_strong P P Q'); [eauto| |done].
+  Qed.
+
+  Global Instance elim_modal_until_strong p P P' Q R R' :
+    EquivUntil P Q R →
+    EquivUntil P' Q R' →
+    ElimModal True p false modality_persistently P' R' P P | 1.
   Proof.
     intros HP HP'.
     rewrite /ElimModal.
@@ -482,11 +551,12 @@ Section ltl_until.
     (□ ◊ P)%I ≡ (◊ □ ◊ P)%I.
   Proof. apply ltl_always_until_idemp. Qed.
 
-  Global Instance ltl_until_equiv_always' (P Q R : tProp) :
-    ltl_until_equiv P Q R →
-    ltl_until_equiv (□ P) Q (□ P) | 1.
+  (* OBS: This is necessary to iMod with goals such as [□ ◊ P] *)
+  Global Instance from_until_always' (P Q R : tProp) :
+    EquivUntil P Q R →
+    EquivUntil (□ P) Q (□ P) | 1.
   Proof.
-    intros. rewrite /ltl_until_equiv. rewrite H. apply ltl_always_until_idemp.
+    intros. rewrite /EquivUntil. rewrite H. apply ltl_always_until_idemp.
   Qed.
 
   (* TODO: Fiddle with priority order; hangs on priority 0/1 *)

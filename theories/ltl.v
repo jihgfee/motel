@@ -1,5 +1,5 @@
 From ltl Require Export trace.
-From iris.proofmode Require Import coq_tactics reduction spec_patterns.
+From iris.proofmode Require Import rocq_tactics reduction spec_patterns.
 From iris.proofmode Require Export proofmode.
 
 Definition tProp S L R := wf_trace S L R → Prop.
@@ -333,9 +333,10 @@ Section after.
     intros wf.
     revert tr wf.
     induction n; intros tr wf.
-    { done. }
-    rewrite Nat.iter_succ_r.
-    apply IHn. apply wf_after_tail_wf. done.
+    { simpl. apply wf. }
+    rewrite ->Nat.iter_succ_r.
+    apply IHn. apply wf_after_tail_wf.
+    apply wf.
   Qed.
 
   Definition wf_after : nat → wf_trace S L Rel → wf_trace S L Rel :=
@@ -353,6 +354,9 @@ Section after.
 
   Definition wf_head (tr : wf_trace S L Rel) : option (S * option L) :=
     head_trace (tr_car tr).
+
+  Lemma wf_tail_wf_after (tr : wf_trace S L Rel) : wf_tail tr = wf_after 1 tr.
+  Proof. apply wf_trace_eq. done. Qed.
 
 End after.
 
@@ -688,7 +692,7 @@ Section ltl_lemmas.
   Qed.
 
   (* Axiom of IPM instantiation *)
-  Lemma ltl_always_idemp (P : tProp) :
+  Lemma ltl_always_idemp_pre (P : tProp) :
     □ P ⊢ □ □ P.
   Proof.
     pose proof (ltl_always_intro_pre (□ P)) as Hintro.
@@ -794,7 +798,7 @@ Section ltl_bi.
     - (* (P ⊢ Q) → <pers> P ⊢ <pers> Q *)
       apply ltl_always_mono.
     - (* <pers> P ⊢ <pers> <pers> P *)
-      apply ltl_always_idemp.
+      apply ltl_always_idemp_pre.
     - (* emp ⊢ <pers> emp *)
       apply ltl_always_emp.
     - (* (<pers> P) ∧ (<pers> Q) ⊢ <pers> (P ∧ Q) *)
@@ -817,20 +821,9 @@ Section ltl_bi.
     - exact: @later_forall_2.
     - exact: @later_exist_false.
     - (* ▷ (P ∗ Q) ⊢ ▷ P ∗ ▷ Q *)
-      intros P Q.
-      apply and_intro; apply later_mono.
-      + apply and_elim_l.
-      + apply and_elim_r.
+      rewrite ltl_later_unseal. done.
     - (* ▷ P ∗ ▷ Q ⊢ ▷ (P ∗ Q) *)
-      intros P Q.
-      trans (ltl_forall (λ b : bool, ltl_later (if b then P else Q))).
-      { apply forall_intro=>[[]].
-        - apply and_elim_l.
-        - apply and_elim_r. }
-      etrans; [apply later_forall_2|apply later_mono].
-      apply and_intro.
-      + refine (forall_elim true).
-      + refine (forall_elim false).
+      rewrite ltl_later_unseal. done.
     - (* ▷ <pers> P ⊢ <pers> ▷ P *)
       rewrite ltl_later_unseal /ltl_later_def. done.
     - (* <pers> ▷ P ⊢ ▷ <pers> P *)
@@ -1193,6 +1186,13 @@ Section ltl_derived_rules.
     done.
   Qed.
 
+  Lemma ltl_always_idemp (P : tProp) :
+    □ P ⊢ □ □ P.
+  Proof.
+    rewrite !bi_intuitionistically_unseal.
+    apply ltl_always_idemp_pre.
+  Qed.
+
   Lemma ltl_always_coind (P Q : tProp) :
     □ (P → (Q ∧ ○ (P ∨ □ Q))) ⊢ P → □ Q.
   Proof.
@@ -1245,13 +1245,13 @@ Section ltl_proofmode.
     IntoSep (○ P)%I (○ Q1)%I (○ Q2)%I.
   Proof. apply into_and_next. Qed.
 
-  Class IntoNext  (p:bool) (P Q : tProp) :=
+  Class IntoNext (p:bool) (P Q : tProp) :=
     into_next : □?p P ⊢ ○ Q.
   Global Arguments IntoNext _ _%I _%I : simpl never.
   Global Arguments into_next _ _%I _%I {_}.
   Global Hint Mode IntoNext ! ! - : typeclass_instances.
 
-  Global Instance into_next_next p (P : tProp) :
+  Global Instance into_next_next p P :
     IntoNext p (○ P) P.
   Proof.
     rewrite /IntoNext.
@@ -1286,12 +1286,13 @@ Section ltl_proofmode.
     - apply ltl_always_next.
   Qed.
 
-  Global Instance into_next_always_comm p (P : tProp) :
-    IntoNext p (□ ○ P) (□ P) | 0.
+  Global Instance into_next_always_comm p (P Q : tProp) :
+    IntoNext p P Q →
+    IntoNext p (□ P) (□ Q) | 0.
   Proof.
-    rewrite /IntoNext. destruct p.
-    - simpl. rewrite -ltl_always_next_comm. eauto.
-    - apply ltl_always_next_comm_1.
+    rewrite /IntoNext. intros HPQ. destruct p.
+    - simpl. rewrite -ltl_always_next_comm. rewrite -HPQ. eauto.
+    - simpl in *. rewrite HPQ. apply ltl_always_next_comm_1.
   Qed.
 
   Global Instance into_next_always_id (P : tProp) :
@@ -1314,7 +1315,7 @@ Section ltl_proofmode.
   Global Instance from_next_next (P : tProp) : FromNext P (○ P).
   Proof. done. Qed.
 
-  Lemma modality_next_mixin : modality_mixin (ltl_next)
+  Lemma modality_next_mixin : modality_mixin ltl_next
     (MIEnvTransform (IntoNext true)) (MIEnvTransform (IntoNext false)).
   Proof.
     split; simpl; eauto.
@@ -1328,25 +1329,29 @@ Section ltl_proofmode.
     - iIntros (P Q) "[HP HQ]". iApply ltl_next_and. by iSplit.
     Unshelve. all: done.
   Qed.
-  Definition modality_next := Modality (@ltl_next S L Rel) modality_next_mixin.
+  Definition modality_next := Modality ltl_next modality_next_mixin.
   Global Instance from_modal_next (P Q : tProp) :
-    FromNext P Q →
-    @FromModal ltlI ltlI _ True%type modality_next Q Q P | 1.
+    FromNext P Q → FromModal True modality_next Q Q P | 1.
   Proof. rewrite /FromModal /=. done. Qed.
 
-  Global Instance into_wand_next p (P Q R : tProp) :
-    IntoWand p p R P Q → IntoWand p p (○ R)%I (○ P)%I (○ Q)%I.
+  Global Instance into_wand_next p q (P Q R R' : tProp) :
+    IntoNext p R R' →
+    IntoWand p q R' P Q → IntoWand p q R (○ P)%I (○ Q)%I.
   Proof.
-    rewrite /IntoWand.
-    destruct p; simpl.
-    - intros HR. iIntros "#HR #HP".
+    rewrite /IntoWand /IntoNext.
+    destruct p, q; simpl.
+    - intros Hnext HR. iIntros "HR HP".
+      rewrite ltl_always_idemp.
+      rewrite Hnext.
       iModIntro. iApply (HR with "HR HP").
-    - intros HR. iIntros "HR HP".
-      iAssert (○ (R ∧ P))%I with "[HR HP]" as "H".
-      { iApply ltl_next_and. iSplit; iFrame. }
-      iApply (ltl_next_mono with "H").
-      rewrite HR.
-      iIntros "[HPQ HP]". by iApply "HPQ".
+    - intros Hnext HR. iIntros "HR HP".
+      rewrite ltl_always_idemp.
+      rewrite Hnext.
+      iModIntro. iApply (HR with "HR HP").
+    - intros -> HR. iIntros "HR HP".
+      iModIntro. by iApply (HR with "HR").
+    - intros -> HR. iIntros "HR HP".
+      iModIntro. by iApply (HR with "HR").
   Qed.
 
 End ltl_proofmode.

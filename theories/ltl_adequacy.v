@@ -15,6 +15,16 @@ Section ltl_adequacy.
     (○ P)%I tr ≡ P (wf_tail tr).
   Proof. rewrite ltl_next_unseal. done. Qed.
 
+  Lemma ltl_next_iter_adequate n (P : tProp) tr :
+    (○^n P)%I tr ≡ P (wf_after n tr).
+  Proof.
+    revert tr P. induction n; intros tr P.
+    { simpl. rewrite wf_after_0. done. }
+    simpl. replace (Datatypes.S n) with (n + 1) by lia.
+    rewrite wf_after_sum.
+    rewrite ltl_next_adequate. rewrite -IHn. done.
+  Qed.
+
   Lemma ltl_always_adequate (P : tProp) tr :
     (□ P)%I tr ≡ ∀ n, P (wf_after n tr).
   Proof.

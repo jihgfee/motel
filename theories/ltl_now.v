@@ -134,10 +134,7 @@ Notation "∞" := (ltl_infinite) (at level 0) : bi_scope.
 
 Inductive empty : SProp := .
 
-Class LTL (S L : Type) (Rel : S → L → S → Prop) :=
-  mkLTL { Rel_dec :: ∀ s l s', Decision (Rel s l s') }.
-
-Definition reducible {S L} `{LTL S L} (s : S) :=
+Definition reducible {S L} Rel (s : S) :=
   ∃ (l:L) (s':S), Rel s l s'.
 
 Section ltl_now_state_label_lemmas.
@@ -164,8 +161,8 @@ Section ltl_now_state_label_lemmas.
     intros [[[]|]] _ H2 H3; inversion H2; inversion H3; simplify_eq; try done.
   Qed.
 
-  Lemma trace_terminates `{HRel: LTL S L Rel} s :
-    ¬ (reducible s) → ↓s s ⊢ ○ ↯ : tProp.
+  Lemma trace_terminates s :
+    ¬ (reducible Rel s) → ↓s s ⊢ ○ ↯ : tProp.
   Proof.
     intros Hsteps.
     constructor.
@@ -181,8 +178,8 @@ Section ltl_now_state_label_lemmas.
     exfalso. apply Hsteps. eexists _, _. apply H3.
   Qed.
 
-  Lemma trace_steps `{HRel: LTL S L Rel} (s:S) :
-    reducible s →
+  Lemma trace_steps (s:S) :
+    reducible Rel s →
     ↓s s ⊢ ∃ (l:L) (s':S), ⌜Rel s l s'⌝ ∧ ↓l l ∧ ○ ↓s s' : tProp.
   Proof.
     intros (l&s'&Hsteps).
@@ -200,12 +197,10 @@ Section ltl_now_state_label_lemmas.
     assert (∃ c', fst <$> head_trace (Some tr) = Some c' ∧ Rel s0 ℓ c') as Hwf.
     { destruct tr.
       { exists s. split; [done|].
-        destruct (decide (Rel s0 ℓ s)); [done|].
-        exfalso. apply empty_ind. inversion tr_wf. simplify_eq.
+        inversion tr_wf. simplify_eq.
         simpl in *. simplify_eq. done. }
       exists s. split; [done|].
-      destruct (decide (Rel s0 ℓ s)); [done|].
-      exfalso. apply empty_ind. inversion tr_wf. simplify_eq.
+      inversion tr_wf. simplify_eq.
       simpl in *. simplify_eq. done. }
     destruct Hwf as (s''&Hhead&Hrel).
     destruct tr; simpl in *; simplify_eq.
@@ -220,7 +215,7 @@ Section ltl_now_state_label_lemmas.
         Unshelve. all: by inversion tr_wf.
   Qed.
 
-  Lemma trace_steps_det `{HRel: LTL S L Rel} (s:S) l s' :
+  Lemma trace_steps_det (s:S) l s' :
     (∀ s l1 l2 s1 s2, Rel s l1 s1 → Rel s l2 s2  → l1 = l2 ∧ s1 = s2) →
     Rel s l s' →
     ↓s s ⊢ ↓l l ∧ ○ ↓s s' : tProp.
@@ -232,8 +227,8 @@ Section ltl_now_state_label_lemmas.
     iFrame.
   Qed.
 
-  Lemma trace_steps_label `{HRel: LTL S L Rel} s l :
-    reducible s →
+  Lemma trace_steps_label s l :
+    reducible Rel s →
     ↓s s ∧ ↓l l ⊢ ∃ (s':S), ⌜Rel s l s'⌝ ∧ ○ ↓s s' : tProp.
   Proof.
     iIntros (Hred) "[Hs Hl]".
@@ -241,7 +236,7 @@ Section ltl_now_state_label_lemmas.
     iDestruct (ltl_now_lbl_agree with "Hl Hl'") as %->. iExists _. iFrame. done.
   Qed.
 
-  Lemma trace_steps_label_det `{HRel: LTL S L Rel} s l s' :
+  Lemma trace_steps_label_det s l s' :
     (∀ s l s1 s2, Rel s l s1 → Rel s l s2  → s1 = s2) →
     Rel s l s' →
     ↓s s ∧ ↓l l ⊢ ○ ↓s s' : tProp.
@@ -310,7 +305,7 @@ Section ltl_now_state_label_lemmas.
       destruct osl as [[?[]]|]; simplify_eq; by naive_solver.
   Qed.
 
-  Lemma ltl_reducible_infinite `{LTL S L Rel} s : (∀ s, reducible s) → ↓s s ⊢ ∞ : tProp.
+  Lemma ltl_reducible_infinite s : (∀ s, reducible Rel s) → ↓s s ⊢ ∞ : tProp.
   Proof.
     iIntros (Hred) "Hs".
     iAssert (□ ∃ s, ↓s s ∧ ¬ ↯)%I with "[Hs]" as "#H"; last first.

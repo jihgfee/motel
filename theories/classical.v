@@ -72,7 +72,7 @@ Section classical.
     { intros. destruct osl; done. }
     iModIntro.
     iAssert (⌜∃ b s', Rel s b s'⌝)%I as %(?&?&?).
-    { assert (reducible s ∨ ¬ reducible s) as [(?&?&Hred)|Hred];
+    { assert (reducible Rel s ∨ ¬ reducible Rel s) as [(?&?&Hred)|Hred];
         [|iPureIntro; eexists _,_; eauto|].
       { apply excluded_middle. }      
       iDestruct (trace_terminates with "Hs") as "Hs"; [done|].

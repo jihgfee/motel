@@ -1,3 +1,4 @@
+From Stdlib.Arith Require Import PeanoNat.
 From stdpp Require Import option.
 
 Delimit Scope trace_scope with trace.
@@ -42,7 +43,7 @@ Section well_formed.
   Definition tail_trace : trace S L → trace S L :=
     mbind tail_trace'.
 
-  CoInductive trace_maximal : trace S L → SProp :=
+  CoInductive trace_maximal : trace S L → Prop :=
   | trace_maximal_empty : trace_maximal None
   | trace_maximal_singleton c :
     (∀ oζ c', ¬ R c oζ c') → trace_maximal (Some $ tr_singl c)
@@ -51,6 +52,15 @@ Section well_formed.
     R c l c' →
     trace_maximal (Some tr) →
     trace_maximal (Some $ tr_cons c l tr).
+
+  Lemma trace_maximal_tail tr : trace_maximal tr → trace_maximal (tail_trace tr).
+  Proof.
+    intros wf.
+    destruct tr as [[]|].
+    - constructor.
+    - simpl. inversion wf; simplify_eq. done.
+    - simpl. constructor.
+  Qed.
 
 End well_formed.
 
@@ -66,3 +76,32 @@ Arguments trace_maximal_empty {_ _ _}.
 Arguments trace_maximal_singleton {_ _ _} _ _.
 
 Notation "tr @ tr_wf" := (Trace tr tr_wf) (at level 100).
+
+Section wf_after.
+  Context {S L : Type}.
+  Context {Rel : S → L → S → Prop}.
+
+  Definition wf_head (tr : wf_trace S L Rel) : option (S * option L) :=
+    head_trace (tr_car tr).
+
+  Definition wf_tail : wf_trace S L Rel → wf_trace S L Rel :=
+    λ tr, (tail_trace (tr_car tr)) @ (trace_maximal_tail Rel (tr_car tr) (tr_wf tr)).
+
+  Notation wf_after n t := (Nat.iter n wf_tail t).
+
+  Lemma wf_after_wf_tail_comm n (tr : wf_trace S L Rel) :
+    wf_after n (wf_tail tr) = wf_tail (wf_after n tr).
+  Proof. induction n; [done|]. simpl. by rewrite IHn. Qed.
+
+  Lemma wf_after_0 tr : wf_after 0 tr = tr.
+  Proof. by destruct tr. Qed.
+
+  Lemma wf_after_sum n m tr : wf_after (n+m) tr = wf_after n (wf_after m tr).
+  Proof. rewrite Nat.iter_add. done. Qed.
+
+  Lemma wf_tail_wf_after (tr : wf_trace S L Rel) : wf_tail tr = wf_after 1 tr.
+  Proof. done. Qed.
+
+End wf_after.
+
+Notation wf_after n t := (Nat.iter n wf_tail t).

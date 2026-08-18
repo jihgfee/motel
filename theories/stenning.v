@@ -66,10 +66,7 @@ Section stenning_ex.
   Instance stenning_state_inhabited : Inhabited stenning_state := populate ((ASending, 0), (BSending, 0)).
   Instance stenning_label_inhabited : Inhabited stenning_label := populate (A, Recv A None).
 
-  Instance stenning_ltl : LTL stenning_state stenning_label stenning_trans.
-  Proof. constructor. intros. apply make_decision. Qed.
-
-  Lemma stenning_reducible s : reducible s.
+  Lemma stenning_reducible s : reducible stenning_trans s.
   Proof.
     destruct s as [[[] i] [[] j]].
     - eexists _, _. econstructor.

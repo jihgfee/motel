@@ -23,10 +23,13 @@ Section ltl_adequacy.
     (○^n P)%I tr ≡ P (wf_after n tr).
   Proof.
     revert tr P. induction n; intros tr P.
-    { simpl. rewrite wf_after_0. done. }
-    simpl. replace (Datatypes.S n) with (n + 1) by lia.
+    { simpl. done. }
+    replace (Datatypes.S n) with (n + 1) by lia.
     rewrite wf_after_sum.
-    rewrite ltl_next_adequate. rewrite -IHn. done.
+    simpl.
+    rewrite -IHn.
+    replace (n + 1) with (Datatypes.S n) by lia.
+    simpl. rewrite ltl_next_adequate. done.
   Qed.
 
   Lemma ltl_always_adequate (P : tProp) tr :
@@ -39,17 +42,17 @@ Section ltl_adequacy.
       specialize (H n). simpl in *.
       revert P tr H.
       induction n; intros P tr H.
-      { simpl in *. rewrite wf_after_0. done. }
+      { simpl in *. done. }
       simpl in *. rewrite ltl_next_adequate in H.
       apply IHn in H.
       (* rewrite -wf_after_sum in H. *)
-      replace (Datatypes.S n) with (n + 1) by lia.
-      rewrite wf_after_sum. done.
+      rewrite -wf_after_wf_tail_comm.
+      done.
     - intros H n.
       specialize (H n).
       revert tr P H.
       induction n; intros tr P H.
-      { simpl in *. rewrite wf_after_0 in H. done. }
+      { simpl in *. done. }
       apply ltl_next_iter_S.
       apply IHn.
       rewrite ltl_next_adequate.

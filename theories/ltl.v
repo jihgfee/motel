@@ -665,7 +665,7 @@ Section ltl_lemmas.
     True ⊢ (□ True) : tProp.
   Proof. apply ltl_always_taut. done. Qed.
 
-  Lemma ltl_always_mono (P Q : tProp) :
+  Lemma ltl_always_mono_pre (P Q : tProp) :
     (P ⊢ Q)%I → (□ P ⊢ □ Q)%I.
   Proof.
     intros HPQ.
@@ -681,12 +681,12 @@ Section ltl_lemmas.
     done.
   Qed.
 
-  Lemma ltl_always_and (P Q : tProp) :
+  Lemma ltl_always_and_pre (P Q : tProp) :
     (□ P) ∧ (□ Q) ⊢ □ (P ∧ Q).
   Proof.
     apply impl_elim_l'.
     etrans; [|apply ltl_always_mono_strong_pre].
-    apply ltl_always_mono.
+    apply ltl_always_mono_pre.
     apply impl_intro_r.
     done.
   Qed.
@@ -699,7 +699,7 @@ Section ltl_lemmas.
     apply impl_elim_l' in Hintro.
     etrans; [|apply Hintro].
     apply and_intro; [|done].
-    apply ltl_always_mono.
+    apply ltl_always_mono_pre.
     apply impl_intro_r.
     etrans; [apply and_elim_r|].
     etrans; [apply ltl_always_unfold_pre_1|].
@@ -796,13 +796,13 @@ Section ltl_bi.
     split.
     - apply ltl_always_ne.
     - (* (P ⊢ Q) → <pers> P ⊢ <pers> Q *)
-      apply ltl_always_mono.
+      apply ltl_always_mono_pre.
     - (* <pers> P ⊢ <pers> <pers> P *)
       apply ltl_always_idemp_pre.
     - (* emp ⊢ <pers> emp *)
       apply ltl_always_emp.
     - (* (<pers> P) ∧ (<pers> Q) ⊢ <pers> (P ∧ Q) *)
-      apply ltl_always_and.
+      apply ltl_always_and_pre.
     - (* <pers> P ∗ Q ⊢ <pers> P *)
       apply ltl_always_affine.
     - (* <pers> P ∧ Q ⊢ P ∗ Q *)
@@ -1051,6 +1051,10 @@ Section ltl_axioms.
     simpl. f_equiv. done.
   Qed.
 
+  Lemma ltl_next_mono (P Q : tProp) :
+    (P ⊢ Q) → (○ P ⊢ ○ Q).
+  Proof. apply ltl_next_mono_pre. Qed.
+
   (** Restating ltl_always lemmas *)
 
   Lemma ltl_always_unfold (P : tProp) :
@@ -1065,18 +1069,22 @@ Section ltl_axioms.
     □ (P → ○ P) ⊢ P → □ P.
   Proof. rewrite !bi_intuitionistically_unseal. apply ltl_always_intro_pre. Qed.
 
+  Lemma ltl_always_and (P Q : tProp) :
+    (□ P) ∧ (□ Q) ⊢ □ (P ∧ Q).
+  Proof. rewrite !bi_intuitionistically_unseal. apply ltl_always_and_pre. Qed.
+
+  Lemma ltl_always_mono (P Q : tProp) :
+    (P ⊢ Q)%I → (□ P ⊢ □ Q)%I.
+  Proof. rewrite !bi_intuitionistically_unseal. apply ltl_always_mono_pre. Qed.
+
   Lemma ltl_always_elim (P : tProp) :
     □ P ⊢ P.
   Proof. rewrite ltl_always_unfold. iIntros "[$ _]". Qed.
 
-  Lemma ltl_next_mono (P Q : tProp) :
-    (P ⊢ Q) → (○ P ⊢ ○ Q).
-  Proof. apply ltl_next_mono_pre. Qed.
-
   (* Actual A1 / K□ *)
   Lemma ltl_always_mono_strong (P Q : tProp) :
     □ (P → Q) ⊢ □ P → □ Q.
-  Proof.  rewrite !bi_intuitionistically_unseal. apply ltl_always_mono_strong_pre. Qed.
+  Proof. rewrite !bi_intuitionistically_unseal. apply ltl_always_mono_strong_pre. Qed.
 
 End ltl_axioms.
 

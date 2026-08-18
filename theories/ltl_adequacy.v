@@ -8,8 +8,12 @@ Section ltl_adequacy.
   Import tProp.
 
   Lemma ltl_adequate (P Q : tProp) :
-    (P ⊢ Q)%I → ∀ tr, P tr → Q tr.
-  Proof. intros. apply H. done. Qed.
+    (P ⊢ Q)%I ≡ (∀ tr, P tr → Q tr).
+  Proof.
+    split.
+    - intros. apply H. done.
+    - intros. done.
+  Qed.
 
   Lemma ltl_next_adequate (P : tProp) tr :
     (○ P)%I tr ≡ P (wf_tail tr).
@@ -151,3 +155,19 @@ Section ltl_adequacy.
   Qed.
 
 End ltl_adequacy.
+
+Ltac adequacy_unseal_core := 
+  try rewrite !ltl_impl_unseal /ltl_impl_def;
+  try rewrite !ltl_and_unseal /ltl_and_def;
+  try rewrite !ltl_always_adequate;
+  try rewrite ltl_next_unseal /ltl_next_def;
+  try setoid_rewrite ltl_eventually_adequate;
+  try setoid_rewrite ltl_now_f_adequate;
+  try setoid_rewrite ltl_now_label_f_adequate;
+  try setoid_rewrite ltl_now_adequate.
+
+Ltac adequacy_unseal :=
+  rewrite ltl_adequate; adequacy_unseal_core.
+
+Ltac adequacy_unseal_goal :=
+  rewrite ltl_adequate; try (intros ?tr); adequacy_unseal_core.

@@ -1,4 +1,4 @@
-From ltl Require Import ltl ltl_fixpoints ltl_now classical.
+From ltl Require Import ltl ltl_fixpoints ltl_now classical ltl_adequacy.
 
 Import tProp.
 
@@ -314,6 +314,15 @@ Section advanced_ex.
       { iPureIntro. lia. }
       iDestruct "H" as "[$ _]". }
     by iApply ltl_next_eventually.
+  Qed.
+
+  Theorem eventually_n_meta'
+    (tr : wf_trace state' label' steps') i :
+    fst <$> (fst <$> wf_head tr) = Some 0 →
+    ∃ n, fst <$> (fst <$> wf_head (wf_after n tr)) = Some i.
+  Proof.
+    pose proof (eventually_n' i).
+    revert H. adequacy_unseal. naive_solver.
   Qed.
 
 End advanced_ex.

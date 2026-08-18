@@ -686,16 +686,8 @@ Section stenning_ex.
     ∃ n, fst <$> (fst <$> head_trace (tr_car (wf_after n tr))) = Some (ASending, i).
   Proof.
     pose proof (stenning_live i).
-    assert ((↓sA (ASending, 0))%I tr → (◊ ↓sA (ASending, i))%I tr) as Htr.
-    { by apply ltl_adequate. }
-    rewrite ltl_eventually_adequate in Htr.
-    rewrite /ltl_now_state_A in Htr.
-    rewrite !ltl_now_f_adequate in Htr.
-    intros Htr'.
-    apply Htr in Htr'.
-    destruct Htr' as [n Hn].
-    rewrite ltl_now_f_adequate in Hn.
-    eauto.
+    revert H. adequacy_unseal.
+    naive_solver.
   Qed.
 
   Theorem stenning_live_label_meta
@@ -704,17 +696,9 @@ Section stenning_ex.
     ∃ n, mjoin (snd <$> head_trace (tr_car (wf_after n tr))) = Some (A, Send (mAB i)).
   Proof.
     pose proof (stenning_live_label i).
-    assert ((↓sA (ASending, 0))%I tr → (◊ (↓l (A, Send (mAB i))))%I tr) as Htr.
-    { by apply ltl_adequate. }
-    rewrite ltl_eventually_adequate in Htr.
-    rewrite /ltl_now_state_A in Htr.
-    rewrite !ltl_now_f_adequate in Htr.
-    intros Htr'.
-    apply Htr in Htr'.
-    destruct Htr' as [n Hn].
-    rewrite ltl_now_label_f_adequate in Hn.
-    rewrite option_fmap_id in Hn.
-    eauto.
+    revert H. adequacy_unseal. 
+    intros. setoid_rewrite option_fmap_id in H.
+    naive_solver.
   Qed.
 
 End stenning_ex.

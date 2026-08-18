@@ -85,14 +85,6 @@ Section ltl_constructors.
   Definition ltl_later_unseal :
     @ltl_later = @ltl_later_def := seal_eq ltl_later_aux.
 
-  Definition ltl_internal_eq_def {A:ofe} (a1 a2 : A) : tProp :=
-    λ tr, a1 ≡ a2.
-  Definition ltl_internal_eq_aux : seal (@ltl_internal_eq_def).
-  Proof. by eexists. Qed.
-  Definition ltl_internal_eq {A} := unseal ltl_internal_eq_aux A.
-  Definition ltl_internal_eq_unseal :
-    @ltl_internal_eq = @ltl_internal_eq_def := seal_eq ltl_internal_eq_aux.
-
 End ltl_constructors.
 
 Module ltl_primitive.
@@ -107,7 +99,7 @@ Section primitive.
   Definition ltl_unseal :=
     (@ltl_pure_unseal S L Rel, @ltl_and_unseal S L Rel, @ltl_or_unseal S L Rel,
        @ltl_impl_unseal S L Rel, @ltl_forall_unseal S L Rel, @ltl_exist_unseal S L Rel,
-         @ltl_later_unseal S L Rel, @ltl_internal_eq_unseal S L Rel).
+         @ltl_later_unseal S L Rel).
 
   Ltac unseal := rewrite !ltl_unseal /=.
 
@@ -125,7 +117,6 @@ Section primitive.
   Notation "∃ x .. y , P" :=
     (ltl_exist (λ x, .. (ltl_exist (λ y, P%I)) ..)) : bi_scope.
   Notation "▷ P" := (ltl_later P) : bi_scope.
-  Notation "x ≡ y" := (ltl_internal_eq x y) : bi_scope.
 
   (** Below there follow the primitive laws for [ltl]. There are no derived laws
   in this file. *)
@@ -250,16 +241,6 @@ Section primitive.
   Qed.
 
   (** Equality *)
-  Lemma internal_eq_refl {A : ofe} P (a : A) : P ⊢ (a ≡ a).
-  Proof. unseal; split=> n ? /=. rewrite /ltl_internal_eq_def. done. Qed.
-  Lemma internal_eq_rewrite {A : ofe} a b (Ψ : A → tProp) :
-    NonExpansive Ψ → a ≡ b ⊢ Ψ a → Ψ b.
-  Proof.
-    intros Hnonexp. unseal; split=> tr Hab HΨ.
-    rewrite /ltl_internal_eq_def in Hab.
-    eapply Hnonexp; [|done].
-    rewrite Hab. done. Unshelve. apply 0.
-  Qed.
 
 End primitive.
 End ltl_primitive.
@@ -408,8 +389,8 @@ Section ltl_axioms.
   Definition ltl_unseal :=
     (@ltl_pure_unseal S L Rel, @ltl_and_unseal S L Rel, @ltl_or_unseal S L Rel,
        @ltl_impl_unseal S L Rel, @ltl_forall_unseal S L Rel, @ltl_exist_unseal S L Rel,
-         @ltl_later_unseal S L Rel, @ltl_internal_eq_unseal S L Rel,
-          @ltl_always_unseal S L Rel, @ltl_next_unseal S L Rel).
+         @ltl_later_unseal S L Rel, 
+           @ltl_always_unseal S L Rel, @ltl_next_unseal S L Rel).
 
   Ltac unseal := rewrite !ltl_unseal /=.
 
@@ -427,7 +408,6 @@ Section ltl_axioms.
   Notation "∃ x .. y , P" :=
     (ltl_exist (λ x, .. (ltl_exist (λ y, P%I)) ..)) : bi_scope.
   Notation "▷ P" := (ltl_later P) : bi_scope.
-  Notation "x ≡ y" := (ltl_internal_eq x y) : bi_scope.
   Notation "□ P" := (ltl_always P) : bi_scope.
 
   Lemma ltl_next_iter_sum n m (P : tProp) :
@@ -606,7 +586,6 @@ Section ltl_lemmas.
   Notation "∃ x .. y , P" :=
     (ltl_exist (λ x, .. (ltl_exist (λ y, P%I)) ..)) : bi_scope.
   Notation "▷ P" := (ltl_later P) : bi_scope.
-  Notation "x ≡ y" := (ltl_internal_eq x y) : bi_scope.
   Notation "□ P" := (ltl_always P) : bi_scope.
 
   (** Derived constructs *)
@@ -929,7 +908,7 @@ Section ltl_axioms.
   Definition ltl_unseal' :=
     (@ltl_pure_unseal S L, @ltl_and_unseal S L, @ltl_or_unseal S L,
        @ltl_impl_unseal S L, @ltl_forall_unseal S L, @ltl_exist_unseal S L,
-         @ltl_later_unseal S L, @ltl_internal_eq_unseal S L,
+         @ltl_later_unseal S L,
     @ltl_next_unseal S L, @ltl_always_unseal S L).
 
   Ltac ltl_unseal := rewrite !ltl_unseal' /=.

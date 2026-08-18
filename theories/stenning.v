@@ -66,10 +66,7 @@ Section stenning_ex.
   Instance stenning_state_inhabited : Inhabited stenning_state := populate ((ASending, 0), (BSending, 0)).
   Instance stenning_label_inhabited : Inhabited stenning_label := populate (A, Recv A None).
 
-  Instance stenning_ltl : LTL stenning_state stenning_label stenning_trans.
-  Proof. constructor. intros. apply make_decision. Qed.
-
-  Lemma stenning_reducible s : reducible s.
+  Lemma stenning_reducible s : reducible stenning_trans s.
   Proof.
     destruct s as [[[] i] [[] j]].
     - eexists _, _. econstructor.
@@ -681,9 +678,11 @@ Section stenning_ex.
   Qed.
 
   Theorem stenning_live_meta
-    (tr : wf_trace stenning_state stenning_label stenning_trans) i :
-    fst <$> (fst <$> head_trace (tr_car tr)) = Some ((ASending, 0)) →
-    ∃ n, fst <$> (fst <$> head_trace (tr_car (wf_after n tr))) = Some (ASending, i).
+    (tr : trace stenning_state stenning_label)
+    (Hwf : trace_maximal stenning_trans tr) i
+    :
+    fst <$> (fst <$> head_trace tr) = Some ((ASending, 0)) →
+    ∃ n, fst <$> (fst <$> head_trace (after n tr)) = Some (ASending, i).
   Proof.
     pose proof (stenning_live i).
     revert H. adequacy_unseal.
@@ -691,12 +690,13 @@ Section stenning_ex.
   Qed.
 
   Theorem stenning_live_label_meta
-    (tr : wf_trace stenning_state stenning_label stenning_trans) i :
-    fst <$> (fst <$> head_trace (tr_car tr)) = Some ((ASending, 0)) →
-    ∃ n, mjoin (snd <$> head_trace (tr_car (wf_after n tr))) = Some (A, Send (mAB i)).
+    (tr : trace stenning_state stenning_label)
+    (Hwf : trace_maximal stenning_trans tr) i :
+    fst <$> (fst <$> head_trace tr) = Some ((ASending, 0)) →
+    ∃ n, mjoin (snd <$> head_trace (after n tr)) = Some (A, Send (mAB i)).
   Proof.
     pose proof (stenning_live_label i).
-    revert H. adequacy_unseal. 
+    revert H. adequacy_unseal.
     intros. setoid_rewrite option_fmap_id in H.
     naive_solver.
   Qed.

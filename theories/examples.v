@@ -199,14 +199,6 @@ Section simple_ex.
 
   Notation tProp := (tProp state label steps).
 
-  Instance simple_ltl : LTL state label steps.
-  Proof.
-    constructor. intros.
-    destruct (decide (s' = s + 1)).
-    - subst. constructor 1. destruct l. constructor.
-    - constructor 2. intros H. inversion H. subst. done.
-  Qed.
-
   Lemma step i : ↓s i ⊢ ○ ↓s (i+1) : tProp.
   Proof.
     iIntros "H".
@@ -241,20 +233,6 @@ Section advanced_ex.
   | my_step_fail i b : steps' (i,b) (negb b) (i,b).
 
   Notation tProp := (tProp state' label' steps').
-
-  Instance advanced_ltl : LTL state' label' steps'.
-  Proof.
-    constructor. intros.
-    destruct s as [i b].
-    destruct (decide (b=l)); subst.
-    - destruct (decide (s' = (i + 1, negb l))).
-      + subst. constructor 1. constructor.
-      + constructor 2. intros H. inversion H; subst. done. by destruct l.
-    - destruct (decide (s' = (i, b))).
-      + subst. constructor 1. destruct b, l; [naive_solver|..|naive_solver]; constructor.
-      + constructor 2. intros H. inversion H; subst. done. done.
-  Qed.
-
   Axiom fair : ∀ (b:bool), ⊢ ◊ ↓l b : tProp.
 
   Lemma step_b b i :
@@ -317,12 +295,14 @@ Section advanced_ex.
   Qed.
 
   Theorem eventually_n_meta'
-    (tr : wf_trace state' label' steps') i :
-    fst <$> (fst <$> wf_head tr) = Some 0 →
-    ∃ n, fst <$> (fst <$> wf_head (wf_after n tr)) = Some i.
+    (tr : trace state' label') (Hwf : trace_maximal steps' tr) i :
+    fst <$> (fst <$> head_trace tr) = Some 0 →
+    ∃ n, fst <$> (fst <$> head_trace (after n tr)) = Some i.
   Proof.
     pose proof (eventually_n' i).
-    revert H. adequacy_unseal. naive_solver.
+    revert H.
+    adequacy_unseal.
+    naive_solver.
   Qed.
 
 End advanced_ex.
@@ -337,8 +317,6 @@ Section yes_no_ex.
 
   Notation tProp := (tProp yn_state yn_label yn_steps).
 
-  Instance yn_ltl : LTL yn_state yn_label yn_steps.
-  Proof. constructor. intros. apply make_decision. Qed.
   Lemma yn_inf_live b :
     ∞ ⊢@{tProp} □ ◊ is_live b.
   Proof.

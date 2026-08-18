@@ -2,7 +2,7 @@ From ltl Require Export trace.
 From iris.proofmode Require Import rocq_tactics reduction spec_patterns.
 From iris.proofmode Require Export proofmode.
 
-Definition tProp S L R := wf_trace S L R → Prop.
+Definition tProp S L (R : S → L → S → Prop) := trace S L → Prop.
 
 Bind Scope bi_scope with tProp.
 Bind Scope bi_scope with trace.
@@ -13,12 +13,14 @@ Section cofe.
   Notation tProp := (@tProp S L R).
 
   Inductive tProp_equiv' (P Q : tProp) : Prop :=
-    { tProp_in_equiv : ∀ tr, P tr ↔ Q tr }.
+    { tProp_in_equiv : ∀ tr, trace_maximal R tr → (P tr ↔ Q tr) }.
   Local Instance tProp_equiv : Equiv tProp := tProp_equiv'.
   Local Instance heapProp_equivalence : Equivalence (≡@{tProp}).
   Proof. split; repeat destruct 1; constructor; naive_solver. Qed.
   Canonical Structure tPropO := discreteO tProp.
 End cofe.
+
+Arguments tProp_equiv' {_ _ _} _ _.
 
 Section ltl_constructors.
   Context {S L : Type}.
@@ -27,7 +29,7 @@ Section ltl_constructors.
   Implicit Type P Q : tProp.
 
   Inductive ltl_entails (P Q : tProp) : Prop :=
-    { ltl_in_entails : ∀ tr, P tr → Q tr }.
+    { ltl_in_entails : ∀ tr, trace_maximal R tr → P tr → Q tr }.
 
   (* Primitive operators *)
   Definition ltl_pure_def (P : Prop) : tProp :=
@@ -127,7 +129,7 @@ Section primitive.
     split.
     - intros P; by split=> i.
     - intros P Q Q' HP HQ.
-      split=> ? ?. by apply HQ, HP.
+      split=> ? ? ?. by apply HQ, HP.
   Qed.
   Lemma entails_anti_symm : AntiSymm (≡) (@ltl_entails S L Rel).
   Proof. intros P Q HPQ HQP; split=> n. by split; [apply HPQ|apply HQP]. Qed.
@@ -174,15 +176,15 @@ Section primitive.
   Lemma pure_intro (φ : Prop) P : φ → P ⊢ ⌜ φ ⌝.
   Proof. intros ?. unseal; by split. Qed.
   Lemma pure_elim' (φ : Prop) P : (φ → True ⊢ P) → ⌜ φ ⌝ ⊢ P.
-  Proof. unseal=> HP; split=> n ?. by apply HP. Qed.
+  Proof. unseal=> HP; split=> n ??. by apply HP. Qed.
   Lemma pure_forall_2 {A} (φ : A → Prop) :
     ((∀ a, ⌜ φ a ⌝):tProp) ⊢ ⌜ ∀ a, φ a ⌝.
   Proof. by unseal. Qed.
 
   Lemma and_elim_l P Q : P ∧ Q ⊢ P.
-  Proof. unseal; by split=> n [??]. Qed.
+  Proof. unseal; by split=> n ? [??]. Qed.
   Lemma and_elim_r P Q : P ∧ Q ⊢ Q.
-  Proof. unseal; by split=> n [??]. Qed.
+  Proof. unseal; by split=> n ? [??]. Qed.
   Lemma and_intro P Q R : (P ⊢ Q) → (P ⊢ R) → P ⊢ Q ∧ R.
   Proof.
     intros HQ HR; unseal; split=> n ?.
@@ -197,28 +199,28 @@ Section primitive.
   Proof. unseal; split=> n ?; right; auto. Qed.
   Lemma or_elim P Q R : (P ⊢ R) → (Q ⊢ R) → P ∨ Q ⊢ R.
   Proof.
-    intros HP HQ. unseal; split=> n [?|?].
+    intros HP HQ. unseal; split=> n ? [?|?].
     - by apply HP.
     - by apply HQ.
   Qed.
 
   Lemma impl_intro_r P Q R : (P ∧ Q ⊢ R) → P ⊢ Q → R.
   Proof.
-    unseal=> HQ; split=> ???.
-    apply HQ. by split.
+    unseal=> HQ; split=> ????.
+    apply HQ; [done|by split].
   Qed.
   Lemma impl_elim_l' P Q R : (P ⊢ Q → R) → P ∧ Q ⊢ R.
-  Proof. unseal=> HP; split=> tr [??]. by apply HP. Qed.
+  Proof. unseal=> HP; split=> tr ? [??]. by apply HP. Qed.
 
   Lemma forall_intro {A} P (Ψ : A → tProp) : (∀ a, P ⊢ Ψ a) → P ⊢ ∀ a, Ψ a.
-  Proof. unseal; intros HPΨ; split=> n ? a; by apply HPΨ. Qed.
+  Proof. unseal; intros HPΨ; split=> n ?? a; by apply HPΨ. Qed.
   Lemma forall_elim {A} {Ψ : A → tProp} a : (∀ a, Ψ a) ⊢ Ψ a.
-  Proof. unseal; split=> n HP; apply HP. Qed.
+  Proof. unseal; split=> n ? HP; apply HP. Qed.
 
   Lemma exist_intro {A} {Ψ : A → tProp} a : Ψ a ⊢ ∃ a, Ψ a.
   Proof. unseal; split=> n ?; by exists a. Qed.
   Lemma exist_elim {A} (Φ : A → tProp) Q : (∀ a, Φ a ⊢ Q) → (∃ a, Φ a) ⊢ Q.
-  Proof. unseal; intros HΨ; split=> n [a ?]; by apply HΨ with a. Qed.
+  Proof. unseal; intros HΨ; split=> n ? [a ?]; by apply HΨ with a. Qed.
 
   (** Later *)
   Lemma later_mono P Q : (P ⊢ Q) → ▷ P ⊢ ▷ Q.
@@ -232,7 +234,7 @@ Section primitive.
   Lemma later_exist_false {A} (Φ : A → tProp) :
     (▷ ∃ a, Φ a) ⊢ ▷ False ∨ (∃ a, ▷ Φ a).
   Proof. unseal; split=> tr /=; eauto. rewrite /ltl_later_def.
-         intros [a Ha]. right. exists a. done.
+         intros ? [a Ha]. right. exists a. done.
   Qed.
   Lemma later_false_em P : ▷ P ⊢ ▷ False ∨ (▷ False → P).
   Proof.
@@ -247,12 +249,12 @@ End ltl_primitive.
 
 Import ltl_primitive.
 
+Notation after n t := (Nat.iter n tail_trace t).
+
 Section after.
   Context {S L : Type}.
   Context {Rel : S → L → S → Prop}.
-
-  Notation after n t := (Nat.iter n tail_trace t).
-
+  
   Lemma after_nil n : after n ⟨⟩ = (⟨⟩ : trace S L).
   Proof. induction n; [done|]. simpl. rewrite IHn. done. Qed.
 
@@ -306,39 +308,6 @@ Section after.
     - simpl. constructor.
   Qed.
 
-  Definition wf_tail : wf_trace S L Rel → wf_trace S L Rel :=
-    λ tr, Trace (tail_trace (tr_car tr)) (wf_after_tail_wf (tr_car tr) (tr_wf tr)).
-
-  Lemma trace_wf_after n tr : trace_maximal Rel tr → trace_maximal Rel (after n tr).
-  Proof.
-    intros wf.
-    revert tr wf.
-    induction n; intros tr wf.
-    { simpl. apply wf. }
-    rewrite ->Nat.iter_succ_r.
-    apply IHn. apply wf_after_tail_wf.
-    apply wf.
-  Qed.
-
-  Definition wf_after : nat → wf_trace S L Rel → wf_trace S L Rel :=
-    λ n tr, Trace (after n (tr_car tr)) (trace_wf_after n (tr_car tr) (tr_wf tr)).
-
-  Lemma wf_after_0 tr : wf_after 0 tr = tr.
-  Proof. by destruct tr. Qed.
-
-  Lemma wf_trace_eq (tr1 tr2 : wf_trace S L Rel) :
-    tr_car tr1 = tr_car tr2 → tr1 = tr2.
-  Proof. intros. destruct tr1, tr2. simpl in *. simplify_eq. done. Qed.
-
-  Lemma wf_after_sum n m tr : wf_after (n+m) tr = wf_after n (wf_after m tr).
-  Proof. apply wf_trace_eq. by apply after_sum. Qed.
-
-  Definition wf_head (tr : wf_trace S L Rel) : option (S * option L) :=
-    head_trace (tr_car tr).
-
-  Lemma wf_tail_wf_after (tr : wf_trace S L Rel) : wf_tail tr = wf_after 1 tr.
-  Proof. apply wf_trace_eq. done. Qed.
-
 End after.
 
 Section ltl_constructors.
@@ -348,7 +317,7 @@ Section ltl_constructors.
   Notation tProp := (tProp S L Rel).
 
   (* LTL Operators *)
-  Definition ltl_next_def (P : tProp) : tProp := λ tr, P (wf_tail tr).
+  Definition ltl_next_def (P : tProp) : tProp := λ tr, P (tail_trace tr).
   Definition ltl_next_aux : seal (@ltl_next_def).
   Proof. by eexists. Qed.
   Definition ltl_next := unseal ltl_next_aux.
@@ -431,7 +400,7 @@ Section ltl_axioms.
   Instance ne_proper (f : tProp → tProp) `{!Proper ((≡) ==> (≡)) f} : NonExpansive f.
   Proof.
     constructor. intros.
-    apply Proper0. done.
+    apply Proper0. done. done.
   Qed.
 
   Global Instance ltl_next_proper : Proper ((≡) ==> (≡)) (@ltl_next S L Rel).
@@ -439,7 +408,8 @@ Section ltl_axioms.
     rewrite ltl_next_unseal.
     constructor.
     intros.
-    destruct tr as [[[]|]]; split; intros; simplify_eq; simpl in *; by apply H.
+    destruct tr as [[]|]; split; intros; simplify_eq; simpl in *;
+      try (apply H; [by apply wf_after_tail_wf|done]).
   Qed.
 
   Lemma ltl_always_ne : NonExpansive (@ltl_always S L Rel).
@@ -452,21 +422,21 @@ Section ltl_axioms.
       specialize (Hx n).
       revert x y H Hx.
       induction n; intros x y H Hx.
-      { simpl. apply H. done. }
-      apply ltl_next_iter_S.
+      { simpl. apply H; done. }
+      apply ltl_next_iter_S; [done|].
       apply (IHn (○ x)%I (○ y)%I).
       { f_equiv. done. }
-      apply ltl_next_iter_S.
+      apply ltl_next_iter_S; [done|].
       done.
     + intros Hx n.
       specialize (Hx n).
       revert x y H Hx.
       induction n; intros x y H Hx.
-      { simpl. apply H. done. }
-      apply ltl_next_iter_S.
+      { simpl. apply H; [done|]. done. }
+      apply ltl_next_iter_S; [done|].
       apply (IHn (○ x)%I (○ y)%I).
       { f_equiv. done. }
-      apply ltl_next_iter_S.
+      apply ltl_next_iter_S; [done|].
       done.
   Qed.
 
@@ -477,8 +447,8 @@ Section ltl_axioms.
     unseal.
     intros [HP].
     constructor.
-    intros tr _.
-    destruct tr as [[[]|]]; intros; eapply HP; done.
+    intros tr wf.
+    destruct tr as [[]|]; intros; eapply HP; try done; apply wf_after_tail_wf; done.
   Qed.
 
   (* K○ *)
@@ -487,8 +457,8 @@ Section ltl_axioms.
   Proof.
     unseal.
     constructor.
-    intros tr HPQ HP.
-    destruct tr as [[[]|]]; simpl in *; by apply HPQ.
+    intros tr tr_wf HPQ HP.
+    destruct tr as [[]|]; simpl in *; by apply HPQ.
   Qed.
 
   Lemma ltl_always_next_unfold P :
@@ -554,7 +524,7 @@ Section ltl_axioms.
     (∀ x, ○ P x)%I ⊢ ○ ∀ x, P x.
   Proof.
     unseal.
-    constructor. intros tr Hnext. destruct tr as [[[]|]].
+    constructor. intros tr tr_wf Hnext. destruct tr as [[]|].
     - simplify_eq. intros x. specialize (Hnext x).
       simplify_eq. done.
     - simplify_eq. intros x. specialize (Hnext x).
@@ -873,12 +843,18 @@ Section restate.
   Proof. done. Qed.
   Lemma ltl_later_unseal : bi_later = @ltl_later_def S L Rel.
   Proof. by rewrite -ltl_later_unseal. Qed.
+  Lemma ltl_next_unseal : ltl_next = @ltl_next_def S L Rel.
+  Proof. by rewrite -ltl_next_unseal. Qed.
+  Lemma ltl_always_unseal : ltl_always = @ltl_always_def S L Rel.
+  Proof. by rewrite -ltl_always_unseal. Qed.
 
   Definition ltl_unseal :=
     (ltl_emp_unseal, ltl_pure_unseal, ltl_and_unseal, ltl_or_unseal,
      ltl_impl_unseal, ltl_forall_unseal, ltl_exist_unseal,
      ltl_sep_unseal, ltl_wand_unseal,
-     ltl_persistently_unseal, ltl_later_unseal).
+     ltl_persistently_unseal, ltl_later_unseal,
+     ltl_next_unseal, ltl_always_unseal).
+
 End restate.
 
 (** The final unseal tactic that also unfolds the BI layer. *)
@@ -890,13 +866,13 @@ Global Instance ltl_next_mono' {S L Rel} :
 Proof.
   rewrite ltl_next_unseal.
   constructor.
-  intros. by apply H.
+  intros. apply H; [by apply wf_after_tail_wf|done].
 Qed.
 Global Instance ltl_next_flip_mono' {S L Rel} :
   Proper (flip (⊢) ==> flip (⊢)) (@ltl_next S L Rel).
 Proof.
   rewrite ltl_next_unseal.
-  constructor. intros. by apply H.
+  constructor. intros. apply H; [by apply wf_after_tail_wf|done].
 Qed.
 
 Section ltl_axioms.
@@ -928,7 +904,7 @@ Section ltl_axioms.
     rewrite /bi_intuitionistically.
     rewrite /bi_affinely.
     unseal. simpl. rewrite /ltl_and_def /ltl_pure_def. simpl.
-    rewrite left_id. done.
+    rewrite left_id. rewrite /ltl_persistently. rewrite ltl_always_unseal. done.
   Qed.
 
   Lemma impl_intro_l (P Q : tProp) :
@@ -969,13 +945,13 @@ Section ltl_axioms.
   Lemma ltl_next_not (P : tProp) :
     ¬ ○ P ⊣⊢ ○ (¬ P).
   Proof.
-    split. intros tr. unseal. ltl_unseal.
+    split. intros tr tr_wf. unseal.
     split.
-    - intros. destruct tr as [[[]|]].
+    - intros. destruct tr as [[]|].
       + intros HP. eapply H. done.
       + intros HP. eapply H. done.
       + intros HP. eapply H. done.
-    - intros. destruct tr as [[[]|]].
+    - intros. destruct tr as [[]|].
       + intros HP. apply H. apply HP.
       + intros HP. apply H. apply HP.
       + intros HP. apply H. apply HP.
@@ -984,14 +960,14 @@ Section ltl_axioms.
   Lemma ltl_next_exists {A} (P : A → tProp) :
     (○ ∃ x, P x)%I ⊢ ∃ x, ○ P x.
   Proof.
-    unseal. ltl_unseal.
-    constructor. intros tr Hnext. inversion Hnext.
+    unseal.
+    constructor. intros tr tr_wf Hnext. inversion Hnext.
     eexists _. apply H.
   Qed.
 
   Lemma ltl_next_pure P :
     ○ ⌜P⌝ ⊣⊢@{tProp} ⌜P⌝.
-  Proof. unseal. rewrite ltl_next_unseal. done. Qed.
+  Proof. unseal. done. Qed.
 
   (** Next Iter *)
 

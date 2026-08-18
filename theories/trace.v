@@ -42,7 +42,7 @@ Section well_formed.
   Definition tail_trace : trace S L → trace S L :=
     mbind tail_trace'.
 
-  CoInductive trace_maximal : trace S L → SProp :=
+  CoInductive trace_maximal : trace S L → Prop :=
   | trace_maximal_empty : trace_maximal None
   | trace_maximal_singleton c :
     (∀ oζ c', ¬ R c oζ c') → trace_maximal (Some $ tr_singl c)
@@ -53,16 +53,3 @@ Section well_formed.
     trace_maximal (Some $ tr_cons c l tr).
 
 End well_formed.
-
-Record wf_trace S L R := Trace {
-  tr_car : trace S L;
-  tr_wf : trace_maximal R tr_car;
-}.
-
-Arguments Trace {_ _ _} _ _.
-Arguments tr_car {_ _ _} _.
-Arguments tr_wf {_ _ _} _.
-Arguments trace_maximal_empty {_ _ _}.
-Arguments trace_maximal_singleton {_ _ _} _ _.
-
-Notation "tr @ tr_wf" := (Trace tr tr_wf) (at level 100).

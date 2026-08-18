@@ -12,7 +12,7 @@ Section ltl_primitives.
   (* LTL Operators *)
   (* Primitive operators *)
   Definition ltl_now_def (P : option (S * option L) → Prop) : tProp :=
-    λ tr, P (wf_head tr).
+    λ tr, P (head_trace tr).
   Definition ltl_now_aux : seal (@ltl_now_def).
   Proof. by eexists. Qed.
   Definition ltl_now := unseal ltl_now_aux.
@@ -132,13 +132,8 @@ Arguments ltl_terminated {_ _ _} : simpl never.
 Notation "↯" := (ltl_terminated) (at level 0) : bi_scope.
 Notation "∞" := (ltl_infinite) (at level 0) : bi_scope.
 
-Inductive empty : SProp := .
-
-Class LTL (S L : Type) (Rel : S → L → S → Prop) :=
-  mkLTL { Rel_dec :: ∀ s l s', Decision (Rel s l s') }.
-
-Definition reducible {S L} `{LTL S L} (s : S) :=
-  ∃ (l:L) (s':S), Rel s l s'.
+Definition reducible {S L} R (s : S) :=
+  ∃ (l:L) (s':S), R s l s'.
 
 Section ltl_now_state_label_lemmas.
   Context {S L : Type}.
@@ -152,7 +147,7 @@ Section ltl_now_state_label_lemmas.
     constructor.
     rewrite ltl_now_unseal.
     unseal.
-    intros [[[]|]] _ H2 H3; inversion H2; simplify_eq; try done.
+    intros [[]|] ? ? H2 H3; inversion H2; simplify_eq; try done.
   Qed.
 
   Lemma ltl_now_lbl_agree (x y : L) :
@@ -161,33 +156,33 @@ Section ltl_now_state_label_lemmas.
     constructor.
     rewrite ltl_now_unseal.
     unseal.
-    intros [[[]|]] _ H2 H3; inversion H2; inversion H3; simplify_eq; try done.
+    intros [[]|] ? ? H2 H3; inversion H2; inversion H3; simplify_eq; try done.
   Qed.
 
-  Lemma trace_terminates `{HRel: LTL S L Rel} s :
-    ¬ (reducible s) → ↓s s ⊢ ○ ↯ : tProp.
+  Lemma trace_terminates s :
+    ¬ (reducible Rel s) → ↓s s ⊢ ○ ↯ : tProp.
   Proof.
     intros Hsteps.
     constructor.
-    intros [[tr|] tr_wf]; last first.
+    intros [tr|] tr_wf; last first.
     { rewrite ltl_now_unseal.
       intros Hnow. inversion Hnow. }
     rewrite /ltl_terminated ltl_now_unseal ltl_next_unseal.
     intros Hnow.
     destruct tr as [|]; inversion Hnow; simpl in *; simplify_eq.
-    { rewrite /ltl_next_def. rewrite /wf_tail. constructor. }
-    rewrite /ltl_next_def. rewrite /wf_tail.
-    exfalso. apply empty_ind. inversion tr_wf. simplify_eq. simpl in *. simplify_eq.
+    { rewrite /ltl_next_def. constructor. }
+    rewrite /ltl_next_def.
+    inversion tr_wf. simplify_eq. simpl in *. simplify_eq.
     exfalso. apply Hsteps. eexists _, _. apply H3.
   Qed.
 
-  Lemma trace_steps `{HRel: LTL S L Rel} (s:S) :
-    reducible s →
+  Lemma trace_steps (s:S) :
+    reducible Rel s →
     ↓s s ⊢ ∃ (l:L) (s':S), ⌜Rel s l s'⌝ ∧ ↓l l ∧ ○ ↓s s' : tProp.
   Proof.
     intros (l&s'&Hsteps).
     constructor.
-    intros [[tr|] tr_wf]; last first.
+    intros [tr|] tr_wf; last first.
     { unseal.
       rewrite ltl_now_unseal.
       intros Hnow. inversion Hnow. }
@@ -195,32 +190,30 @@ Section ltl_now_state_label_lemmas.
     rewrite ltl_now_unseal.
     intros Hnow.
     destruct tr as [|]; inversion Hnow; simpl in *; simplify_eq.
-    { exfalso. apply empty_ind. inversion tr_wf. subst. specialize (H0 l s'). done. }
+    { inversion tr_wf. subst. specialize (H0 l s'). done. }
     clear Hsteps.
     assert (∃ c', fst <$> head_trace (Some tr) = Some c' ∧ Rel s0 ℓ c') as Hwf.
     { destruct tr.
       { exists s. split; [done|].
-        destruct (decide (Rel s0 ℓ s)); [done|].
-        exfalso. apply empty_ind. inversion tr_wf. simplify_eq.
+        inversion tr_wf. simplify_eq.
         simpl in *. simplify_eq. done. }
       exists s. split; [done|].
-      destruct (decide (Rel s0 ℓ s)); [done|].
-      exfalso. apply empty_ind. inversion tr_wf. simplify_eq.
+      inversion tr_wf. simplify_eq.
       simpl in *. simplify_eq. done. }
     destruct Hwf as (s''&Hhead&Hrel).
     destruct tr; simpl in *; simplify_eq.
     - eexists ℓ, s''. econstructor; [done|].
       econstructor.
       + by econstructor.
-      + rewrite ltl_next_unseal. econstructor. 
+      + econstructor. 
     - eexists ℓ, s''. econstructor; [done|].
       econstructor.
       + by econstructor.
-      + rewrite ltl_next_unseal. econstructor.
+      + econstructor.
         Unshelve. all: by inversion tr_wf.
   Qed.
 
-  Lemma trace_steps_det `{HRel: LTL S L Rel} (s:S) l s' :
+  Lemma trace_steps_det (s:S) l s' :
     (∀ s l1 l2 s1 s2, Rel s l1 s1 → Rel s l2 s2  → l1 = l2 ∧ s1 = s2) →
     Rel s l s' →
     ↓s s ⊢ ↓l l ∧ ○ ↓s s' : tProp.
@@ -232,8 +225,8 @@ Section ltl_now_state_label_lemmas.
     iFrame.
   Qed.
 
-  Lemma trace_steps_label `{HRel: LTL S L Rel} s l :
-    reducible s →
+  Lemma trace_steps_label s l :
+    reducible Rel s →
     ↓s s ∧ ↓l l ⊢ ∃ (s':S), ⌜Rel s l s'⌝ ∧ ○ ↓s s' : tProp.
   Proof.
     iIntros (Hred) "[Hs Hl]".
@@ -310,7 +303,7 @@ Section ltl_now_state_label_lemmas.
       destruct osl as [[?[]]|]; simplify_eq; by naive_solver.
   Qed.
 
-  Lemma ltl_reducible_infinite `{LTL S L Rel} s : (∀ s, reducible s) → ↓s s ⊢ ∞ : tProp.
+  Lemma ltl_reducible_infinite s : (∀ s, reducible Rel s) → ↓s s ⊢ ∞ : tProp.
   Proof.
     iIntros (Hred) "Hs".
     iAssert (□ ∃ s, ↓s s ∧ ¬ ↯)%I with "[Hs]" as "#H"; last first.

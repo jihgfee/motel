@@ -227,9 +227,9 @@ Section ltl_until.
   Global Instance ltl_until_proper : Proper ((≡) ==> (≡) ==> (≡)) (ltl_until).
   Proof.
     constructor.
-    intros. split.
-    - apply ltl_until_mono; [by rewrite H|by rewrite H0].
-    - apply ltl_until_mono; [by rewrite H|by rewrite H0].
+    intros tr tr_wf. split.
+    - apply ltl_until_mono; [by rewrite H|by rewrite H0|done].
+    - apply ltl_until_mono; [by rewrite H|by rewrite H0|done].
   Qed.
   Global Instance ltl_until_mono' :
     Proper ((⊢) ==> (⊢) ==> (⊢)) (ltl_until).
@@ -596,3 +596,75 @@ End ltl_until.
 
 Global Notation "P ∪ Q" := (ltl_until P Q%I) : bi_scope.
 Global Notation "◊ P" := (ltl_until True P%I) (at level 20, right associativity) : bi_scope.
+
+(* Module tProp. *)
+(* Section restate. *)
+(*   Context {S L : Type}. *)
+(*   Context {Rel : S → L → S → Prop}. *)
+
+(*   (** We restate the unsealing lemmas so that they also unfold the BI layer. The *) *)
+(* (*   sealing lemmas are partially applied so that they also work under binders. *) *)
+(*   Lemma ltl_emp_unseal : bi_emp = @ltl_pure_def S L Rel True. *)
+(*   Proof. by rewrite -ltl_pure_unseal. Qed. *)
+(*   Lemma ltl_pure_unseal : bi_pure = @ltl_pure_def S L Rel. *)
+(*   Proof. by rewrite -ltl_pure_unseal. Qed. *)
+(*   Lemma ltl_and_unseal : bi_and = @ltl_and_def S L Rel. *)
+(*   Proof. by rewrite -ltl_and_unseal. Qed. *)
+(*   Lemma ltl_or_unseal : bi_or = @ltl_or_def S L Rel. *)
+(*   Proof. by rewrite -ltl_or_unseal. Qed. *)
+(*   Lemma ltl_impl_unseal : bi_impl = @ltl_impl_def S L Rel. *)
+(*   Proof. by rewrite -ltl_impl_unseal. Qed. *)
+(*   Lemma ltl_forall_unseal : @bi_forall _ = @ltl_forall_def S L Rel. *)
+(*   Proof. by rewrite -ltl_forall_unseal. Qed. *)
+(*   Lemma ltl_exist_unseal : @bi_exist _ = @ltl_exist_def S L Rel. *)
+(*   Proof. by rewrite -ltl_exist_unseal. Qed. *)
+(*   Lemma ltl_sep_unseal : bi_sep = @ltl_and_def S L Rel. *)
+(*   Proof. by rewrite -ltl_and_unseal. Qed. *)
+(*   Lemma ltl_wand_unseal : bi_wand = @ltl_impl_def S L Rel. *)
+(*   Proof. by rewrite -ltl_impl_unseal. Qed. *)
+(*   Lemma ltl_persistently_unseal : bi_persistently = @ltl_persistently S L Rel. *)
+(*   Proof. done. Qed. *)
+(*   Lemma ltl_later_unseal : bi_later = @ltl_later_def S L Rel. *)
+(*   Proof. by rewrite -ltl_later_unseal. Qed. *)
+(*   Lemma ltl_next_unseal : ltl_next = @ltl_next_def S L Rel. *)
+(*   Proof. by rewrite -ltl_next_unseal. Qed. *)
+(*   Lemma ltl_always_unseal (P : tProp S L Rel) : bi_intuitionistically P ≡ @ltl_always_def S L Rel P. *)
+(*   Proof. by rewrite ltl_always_unseal'. Qed. *)
+(*   Definition ltl_eventually_alt_def (P : tProp S L Rel) : tProp S L Rel := *)
+(*     (∃ n, ltl_next_iter n P)%I. *)
+(*   Lemma ltl_eventually_next_equiv (P : tProp S L Rel) : *)
+(*     (◊ P)%I ≡ (∃ n : nat, ltl_next_iter n P)%I. *)
+(*   Proof. *)
+(*     iSplit. *)
+(*     - iApply ltl_eventually_ind. *)
+(*       { iIntros "HP". iExists 0. done. } *)
+(*       iIntros "[HP IH]". *)
+(*       rewrite ltl_next_exists. *)
+(*       iDestruct "IH" as (n) "IH". *)
+(*       iExists (Datatypes.S n). *)
+(*       simpl. *)
+(*       iIntros "!>". *)
+(*       done. *)
+(*     - iDestruct 1 as (x) "H". *)
+(*       iInduction x as [|n Hn]. *)
+(*       { iModIntro. done. } *)
+(*       iApply ltl_next_eventually. *)
+(*       simpl. iModIntro. *)
+(*       by iApply "Hn". *)
+(*   Qed. *)
+
+(*   Lemma ltl_eventually_unseal P : (ltl_until True P) ≡ ltl_eventually_alt_def P. *)
+(*   Proof. apply ltl_eventually_next_equiv. Qed. *)
+
+(*   Definition ltl_unseal := *)
+(*     (ltl_emp_unseal, ltl_pure_unseal, ltl_and_unseal, ltl_or_unseal, *)
+(*      ltl_impl_unseal, ltl_forall_unseal, ltl_exist_unseal, *)
+(*      ltl_sep_unseal, ltl_wand_unseal, *)
+(*      ltl_persistently_unseal, ltl_later_unseal, *)
+(*      ltl_next_unseal, ltl_always_unseal, ltl_eventually_unseal). *)
+
+(* End restate. *)
+
+(* (** The final unseal tactic that also unfolds the BI layer. *) *)
+(* Ltac unseal := rewrite !ltl_unseal /=. *)
+(* End tProp. *)

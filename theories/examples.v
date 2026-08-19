@@ -17,8 +17,8 @@ Section examples.
   Lemma next_primer (P Q R : tProp) : ⊢ □ ○ (P → Q) → ○ P → Q → ○ R → ○ Q.
   Proof. iIntros "#HPQ HP HQ HR". iModIntro. iApply "HPQ". done. Qed.
 
-  Lemma eventually_primer (P Q R : tProp) : ⊢ □ (P → ◊ Q) → ◊ ○ P → ◊ ○ R →  ○ ◊ Q.
-  Proof. iIntros "#HPQ HP HR". iMod "HP". iModIntro. iApply "HPQ". done. Qed.
+  Lemma eventually_primer (P Q : tProp) : ⊢ □ (P → ○ ◊ Q) → ◊ P →  ○ ◊ Q.
+  Proof. iIntros "#HPQ HP". iMod "HP". iApply "HPQ". done. Qed.
 
   Lemma eventually_primer' (P Q R : tProp) : ⊢ □ (P → □ ◊ Q) → ◊ P → ◊ R →  □ ◊ Q.
   Proof. iIntros "#HPQ HP HR". iMod "HP". iApply "HPQ". done. Qed.
@@ -191,6 +191,89 @@ Section examples.
 
 End examples.
 
+
+Section demo_ex.
+
+  Definition demo_state := bool.
+  Definition demo_label := bool.
+
+  Inductive demo_steps : demo_state → demo_label → demo_state → Prop :=
+    | demo_steps_succ b : demo_steps b b (negb b)
+    | demo_steps_fail b : demo_steps b (negb b) b.
+
+  Notation tProp := (tProp demo_state demo_label demo_steps).
+
+  Lemma demo_step :
+    ∀ b, ↓s b ⊢
+         (↓l b ∧ ○ ↓s (negb b)) ∨
+         (↓l (negb b) ∧ ○ ↓s b) : tProp.
+  Proof.
+    iIntros (i) "Hs".
+    iDestruct (trace_steps with "Hs")
+      as (l s' Hrel) "[Hl Hs']".
+    { eexists _, _. constructor. }
+    inversion Hrel; simplify_eq.
+    - iLeft. iFrame.
+    - iRight. iFrame.
+  Qed.
+
+  Lemma demo_step_succ :
+    ∀ b, (↓s b ∧ ↓l b)%I ⊢ ○ ↓s (negb b) : tProp.
+  Proof.
+    iIntros (b) "[Hs Hl]".
+    iDestruct (demo_step with "Hs") as "[[_ $]|(Hl'&Hs)]".
+    iDestruct (ltl_now_lbl_agree with "Hl Hl'") as %Heq.
+    by destruct b.
+  Qed.
+
+  Lemma eventual_step b :
+    □ (∀ b, ◊ ↓l b) ∧ ↓s b ⊢ ◊ (↓s b ∧ ↓l b) : tProp.
+  Proof.
+    iIntros "[#Hfair Hs]". iRevert "Hs".
+    iDestruct ("Hfair" $! b) as "-#Hl".
+    iApply (ltl_eventually_ind_strong with "[] Hl").
+    iIntros "!> [Hl|[Hl IH]] Hs".
+    { iModIntro. iFrame. }
+    iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
+    iDestruct (demo_step with "Hs") as "[[Hl' Hs]|[Hl' Hs]]".
+    { iModIntro. iFrame. }
+    iEval (rewrite -ltl_next_eventually). iModIntro.
+    iApply "IH". iFrame.
+  Qed.
+
+  Lemma eventual_response b :
+    □ (∀ b, ◊ ↓l b) ⊢ ↓s b → ○ ◊ ↓s (negb b) : tProp.
+  Proof.
+    iIntros "#Hfair Hs".
+    iDestruct (eventual_step with "[$Hfair $Hs]") as "Hsl".
+    iMod "Hsl" as "[Hs Hl]".
+    iDestruct (demo_step_succ with "[$Hs $Hl]") as "Hs".
+    iModIntro. iModIntro. done.
+  Qed.
+
+  Theorem demo_theorem :
+    □ (∀ b, ◊ ↓l b) ⊢ ◊ ↓s true → ○ ◊ ↓s false : tProp.
+  Proof.
+    iIntros "#Hfair".
+    iApply eventually_primer.
+    iApply (eventual_response with "Hfair").
+  Qed.
+
+  Theorem demo_theorem_meta
+    (tr : wf_trace demo_state demo_label demo_steps) :
+    (∀ n b, ∃ m, mjoin (snd <$> (head_trace (tr_car (wf_after m (wf_after n tr))))) = Some b) →
+    (∃ n, (fst <$> head_trace (tr_car (wf_after n tr))) = Some true) →
+    ∃ n, fst <$> (head_trace (tr_car (wf_after n (wf_tail tr)))) = Some false.
+  Proof.
+    pose proof demo_theorem.
+    revert H.
+    adequacy_unseal.
+    setoid_rewrite option_fmap_id.
+    naive_solver.
+  Qed.
+
+End demo_ex.
+
 Section simple_ex.
   Definition state := nat.
   Definition label := unit.
@@ -199,9 +282,9 @@ Section simple_ex.
 
   Notation tProp := (tProp state label steps).
 
-  Lemma step i : ↓s i ⊢ ○ ↓s (i+1) : tProp.
+  Lemma step : ⊢ ∀ i, ↓s i → ○ ↓s (i+1) : tProp.
   Proof.
-    iIntros "H".
+    iIntros (i) "H".
     iDestruct (trace_steps_det with "H") as "[Hl Hs]".
     { intros. by inversion H; inversion H0; simplify_eq. }
     { econstructor. }
@@ -210,16 +293,17 @@ Section simple_ex.
 
   Lemma eventually_n (n:nat) : ↓s 0 ⊢ ◊ ↓s n : tProp.
   Proof.
-    assert (∃ i j, i = 0 ∧ n-j = i ∧ n >= j) as (i&j&<-&H1&H2).
-    { eexists _, n. split; [done|]. lia. }
-    iInduction j as [|j IH] forall (i H1 H2).
-    { simplify_eq. rewrite right_id. iIntros "H". by iModIntro. }
-    iIntros "H".
-    iDestruct (step with "H") as "H".
+    iDestruct step as "Hstep".
+    assert (∃ i j, i = 0 ∧ n = i+j) as (i&j&Heq&H1).
+    { eexists 0, n. lia. }
+    rewrite -{2}Heq. clear Heq.
+    iInduction j as [|j IH] forall (i H1).
+    { simplify_eq. rewrite right_id. iIntros "Hs". iModIntro. iApply "Hs". }
+    iIntros "Hs".
+    iDestruct (step with "Hs") as "Hs".
     iApply ltl_next_eventually. iModIntro.
-    iApply ("IH" with "[] []"); [| |done].
-    { subst. iPureIntro. lia. }
-    { iPureIntro. lia. }
+    iApply ("IH" with "[] Hs").
+    iPureIntro. lia.
   Qed.
 
 End simple_ex.
@@ -234,7 +318,7 @@ Section advanced_ex.
 
   Notation tProp := (tProp state' label' steps').
 
-  Axiom fair : ∀ (b:bool), ⊢ ◊ ↓l b : tProp.
+  Axiom advanced_fair : ∀ (b:bool), ⊢ ◊ ↓l b : tProp.
 
   Lemma step_b b i :
     ↓s (i,b) ⊢ ↓l b ∧ ○ ↓s (i+1,negb b) ∨ ↓l (negb b) ∧ ○ (↓s (i,b)) : tProp.
@@ -254,7 +338,7 @@ Section advanced_ex.
     iAssert (↓s (i,b) ∪ ↓s (i+1,negb b))%I with "[Hs]" as "H"; last first.
     { by iApply (ltl_until_mono_strong with "[] [] H"); eauto. }
     iRevert "Hs".
-    iDestruct (fair b) as "-#Hfair".
+    iDestruct (advanced_fair b) as "-#Hfair".
     iApply (ltl_eventually_ind_strong with "[] Hfair").
     iIntros "!> [Hl|H]".
     { iIntros "Hs".

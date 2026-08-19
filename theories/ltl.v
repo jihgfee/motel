@@ -1,5 +1,5 @@
 From ltl Require Export trace.
-From iris.proofmode Require Import rocq_tactics reduction spec_patterns.
+From iris.proofmode Require Import coq_tactics reduction spec_patterns.
 From iris.proofmode Require Export proofmode.
 
 Definition tProp S L R := wf_trace S L R → Prop.
@@ -583,7 +583,7 @@ Section ltl_bi.
   Definition ltl_sep (P Q : tProp) : tProp := ltl_and P Q.
   Definition ltl_wand (P Q : tProp) : tProp := ltl_impl P Q.
   Definition ltl_persistently (P : tProp) : tProp := ltl_always P.
-  Definition ltl_later (P : tProp) : tProp := ltl_pure True.
+  Definition ltl_later (P : tProp) : tProp := P.
 
   Local Existing Instance entails_po.
 
@@ -660,15 +660,13 @@ Section ltl_bi.
       apply ltl_always_sep_and.
   Qed.
 
-  (* From iris.bi Require Import interface. *)
-
   Lemma ltl_bi_later_mixin :
     BiLaterMixin
       ltl_entails ltl_pure ltl_or ltl_impl
       (@ltl_forall S L Rel) (@ltl_exist S L Rel) ltl_and ltl_persistently ltl_later.
   Proof.
-    eapply bi_later_mixin_True;
-      [done..|apply ltl_bi_mixin|apply ltl_bi_persistently_mixin].
+    eapply bi_later_mixin_id; [done|];
+      [done..|apply ltl_bi_mixin].
   Qed.
 
 End ltl_bi.

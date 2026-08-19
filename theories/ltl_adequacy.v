@@ -159,6 +159,8 @@ Section ltl_adequacy.
 
 End ltl_adequacy.
 
+Import tProp.
+
 Ltac adequacy_unseal_core := 
   try rewrite !ltl_impl_unseal /ltl_impl_def;
   try rewrite !ltl_and_unseal /ltl_and_def;

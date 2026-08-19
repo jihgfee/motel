@@ -79,6 +79,7 @@ Section ltl_now_axioms.
     IntoAnd b (↓ (ϕ [[and]] ψ):tProp) (↓ ϕ) (↓ ψ).
   Proof. rewrite /IntoAnd. by rewrite ltl_now_and. Qed.
 
+  (* TODO: Is this needed? *)
   Global Instance into_sep_now (ϕ ψ : option (S * option L) → Prop) :
     IntoSep (↓ (ϕ [[and]] ψ):tProp) (↓ ϕ) (↓ ψ).
   Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_and. Qed.
@@ -368,6 +369,7 @@ Section ltl_now_state_prod.
     IntoAnd b (↓s (s1,s2):tProp) (↓fs fst s1) (↓fs snd s2).
   Proof. rewrite /IntoAnd. by rewrite ltl_now_prod_and. Qed.
 
+  (* TODO: Is this needed? *)
   Global Instance into_sep_now_prod (s1 : S1) (s2 : S2) :
     IntoSep (↓s (s1,s2):tProp) (↓fs fst s1) (↓fs snd s2).
   Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_prod_and. Qed.
@@ -415,6 +417,7 @@ Section ltl_now_label_prod.
     IntoAnd b (↓l (l1,l2):tProp) (↓fl fst l1) (↓fl snd l2).
   Proof. rewrite /IntoAnd. by rewrite ltl_now_label_prod_and. Qed.
 
+  (* TODO: Is this needed? *)
   Global Instance into_sep_now_label_prod (l1 : L1) (l2 : L2) :
     IntoSep (↓l (l1,l2):tProp) (↓fl fst l1) (↓fl snd l2).
   Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_label_prod_and. Qed.

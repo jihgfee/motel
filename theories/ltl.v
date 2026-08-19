@@ -78,13 +78,6 @@ Section ltl_constructors.
   Definition ltl_exist_unseal :
     @ltl_exist = @ltl_exist_def := seal_eq ltl_exist_aux.
 
-  Definition ltl_later_def (P : tProp) : tProp := P.
-  Definition ltl_later_aux : seal (@ltl_later_def).
-  Proof. by eexists. Qed.
-  Definition ltl_later := unseal ltl_later_aux.
-  Definition ltl_later_unseal :
-    @ltl_later = @ltl_later_def := seal_eq ltl_later_aux.
-
 End ltl_constructors.
 
 Module ltl_primitive.
@@ -98,8 +91,7 @@ Section primitive.
 
   Definition ltl_unseal :=
     (@ltl_pure_unseal S L Rel, @ltl_and_unseal S L Rel, @ltl_or_unseal S L Rel,
-       @ltl_impl_unseal S L Rel, @ltl_forall_unseal S L Rel, @ltl_exist_unseal S L Rel,
-         @ltl_later_unseal S L Rel).
+       @ltl_impl_unseal S L Rel, @ltl_forall_unseal S L Rel, @ltl_exist_unseal S L Rel).
 
   Ltac unseal := rewrite !ltl_unseal /=.
 
@@ -116,7 +108,6 @@ Section primitive.
     (ltl_forall (λ x, .. (ltl_forall (λ y, P%I)) ..)) : bi_scope.
   Notation "∃ x .. y , P" :=
     (ltl_exist (λ x, .. (ltl_exist (λ y, P%I)) ..)) : bi_scope.
-  Notation "▷ P" := (ltl_later P) : bi_scope.
 
   (** Below there follow the primitive laws for [ltl]. There are no derived laws
   in this file. *)
@@ -167,8 +158,6 @@ Section primitive.
     intros Ψ1 Ψ2 HΨ.
     unseal; split=> ?; split; intros [a ?]; exists a; by apply HΨ.
   Qed.
-  Lemma later_ne : NonExpansive (@ltl_later S L Rel).
-  Proof. unseal; intros n P Q HPQ. rewrite /ltl_later_def. done. Qed.
 
   (** Introduction and elimination rules *)
   Lemma pure_intro (φ : Prop) P : φ → P ⊢ ⌜ φ ⌝.
@@ -219,28 +208,6 @@ Section primitive.
   Proof. unseal; split=> n ?; by exists a. Qed.
   Lemma exist_elim {A} (Φ : A → tProp) Q : (∀ a, Φ a ⊢ Q) → (∃ a, Φ a) ⊢ Q.
   Proof. unseal; intros HΨ; split=> n [a ?]; by apply HΨ with a. Qed.
-
-  (** Later *)
-  Lemma later_mono P Q : (P ⊢ Q) → ▷ P ⊢ ▷ Q.
-  Proof. unseal=> HP; split=>tr. rewrite /ltl_later_def.
-         destruct HP as [HP]. apply HP. Qed.
-  Lemma later_intro P : P ⊢ ▷ P.
-  Proof. unseal; split=> /= HP. done. Qed.
-
-  Lemma later_forall_2 {A} (Φ : A → tProp) : (∀ a, ▷ Φ a) ⊢ ▷ ∀ a, Φ a.
-  Proof. unseal; by split. Qed.
-  Lemma later_exist_false {A} (Φ : A → tProp) :
-    (▷ ∃ a, Φ a) ⊢ ▷ False ∨ (∃ a, ▷ Φ a).
-  Proof. unseal; split=> tr /=; eauto. rewrite /ltl_later_def.
-         intros [a Ha]. right. exists a. done.
-  Qed.
-  Lemma later_false_em P : ▷ P ⊢ ▷ False ∨ (▷ False → P).
-  Proof.
-    unseal; split=> tr /= HP. rewrite /ltl_later_def.
-    right. intros _. done.
-  Qed.
-
-  (** Equality *)
 
 End primitive.
 End ltl_primitive.
@@ -295,8 +262,7 @@ Section ltl_axioms.
   Definition ltl_unseal :=
     (@ltl_pure_unseal S L Rel, @ltl_and_unseal S L Rel, @ltl_or_unseal S L Rel,
        @ltl_impl_unseal S L Rel, @ltl_forall_unseal S L Rel, @ltl_exist_unseal S L Rel,
-         @ltl_later_unseal S L Rel, 
-           @ltl_always_unseal S L Rel, @ltl_next_unseal S L Rel).
+         @ltl_always_unseal S L Rel, @ltl_next_unseal S L Rel).
 
   Ltac unseal := rewrite !ltl_unseal /=.
 
@@ -313,7 +279,6 @@ Section ltl_axioms.
     (ltl_forall (λ x, .. (ltl_forall (λ y, P%I)) ..)) : bi_scope.
   Notation "∃ x .. y , P" :=
     (ltl_exist (λ x, .. (ltl_exist (λ y, P%I)) ..)) : bi_scope.
-  Notation "▷ P" := (ltl_later P) : bi_scope.
   Notation "□ P" := (ltl_always P) : bi_scope.
 
   Lemma ltl_next_iter_sum n m (P : tProp) :
@@ -491,7 +456,6 @@ Section ltl_lemmas.
     (ltl_forall (λ x, .. (ltl_forall (λ y, P%I)) ..)) : bi_scope.
   Notation "∃ x .. y , P" :=
     (ltl_exist (λ x, .. (ltl_exist (λ y, P%I)) ..)) : bi_scope.
-  Notation "▷ P" := (ltl_later P) : bi_scope.
   Notation "□ P" := (ltl_always P) : bi_scope.
 
   (** Derived constructs *)
@@ -616,15 +580,17 @@ Section ltl_bi.
   Notation tProp := (tProp S L Rel).
 
   Definition ltl_emp : tProp := ltl_pure True.
+  Definition ltl_sep (P Q : tProp) : tProp := ltl_and P Q.
+  Definition ltl_wand (P Q : tProp) : tProp := ltl_impl P Q.
   Definition ltl_persistently (P : tProp) : tProp := ltl_always P.
-  Definition ltl_plainly (P : tProp) : tProp := P.
+  Definition ltl_later (P : tProp) : tProp := ltl_pure True.
 
   Local Existing Instance entails_po.
 
   Lemma ltl_bi_mixin :
     BiMixin
       ltl_entails ltl_emp ltl_pure ltl_and ltl_or ltl_impl
-      (@ltl_forall S L Rel) (@ltl_exist S L Rel) ltl_and ltl_impl.
+      (@ltl_forall S L Rel) (@ltl_exist S L Rel) ltl_sep ltl_wand.
   Proof.
     split.
     - exact: entails_po.
@@ -676,7 +642,7 @@ Section ltl_bi.
   Lemma ltl_bi_persistently_mixin :
     BiPersistentlyMixin
       ltl_entails ltl_emp ltl_and
-      ltl_and ltl_persistently.
+      ltl_sep ltl_persistently.
   Proof.
     split.
     - apply ltl_always_ne.
@@ -694,29 +660,15 @@ Section ltl_bi.
       apply ltl_always_sep_and.
   Qed.
 
+  (* From iris.bi Require Import interface. *)
+
   Lemma ltl_bi_later_mixin :
     BiLaterMixin
       ltl_entails ltl_pure ltl_or ltl_impl
       (@ltl_forall S L Rel) (@ltl_exist S L Rel) ltl_and ltl_persistently ltl_later.
   Proof.
-    split.
-    - exact: later_ne.
-    - exact: later_mono.
-    - exact: later_intro.
-    - exact: @later_forall_2.
-    - exact: @later_exist_false.
-    - (* ▷ (P ∗ Q) ⊢ ▷ P ∗ ▷ Q *)
-      rewrite ltl_later_unseal. done.
-    - (* ▷ P ∗ ▷ Q ⊢ ▷ (P ∗ Q) *)
-      rewrite ltl_later_unseal. done.
-    - (* ▷ <pers> P ⊢ <pers> ▷ P *)
-      rewrite ltl_later_unseal /ltl_later_def. done.
-    - (* <pers> ▷ P ⊢ ▷ <pers> P *)
-      rewrite ltl_later_unseal /ltl_later_def. done.
-    - (* <pers> ▷ P ⊢ ▷ <pers> P *)
-      rewrite ltl_later_unseal /ltl_later_def.
-      intros P. constructor. intros.
-      rewrite ltl_or_unseal. right. rewrite ltl_impl_unseal. intros HP. done.
+    eapply bi_later_mixin_True;
+      [done..|apply ltl_bi_mixin|apply ltl_bi_persistently_mixin].
   Qed.
 
 End ltl_bi.
@@ -771,20 +723,13 @@ Section restate.
   Proof. by rewrite -ltl_forall_unseal. Qed.
   Lemma ltl_exist_unseal : @bi_exist _ = @ltl_exist_def S L Rel.
   Proof. by rewrite -ltl_exist_unseal. Qed.
-  Lemma ltl_sep_unseal : bi_sep = @ltl_and_def S L Rel.
-  Proof. by rewrite -ltl_and_unseal. Qed.
-  Lemma ltl_wand_unseal : bi_wand = @ltl_impl_def S L Rel.
-  Proof. by rewrite -ltl_impl_unseal. Qed.
   Lemma ltl_persistently_unseal : bi_persistently = @ltl_persistently S L Rel.
   Proof. done. Qed.
-  Lemma ltl_later_unseal : bi_later = @ltl_later_def S L Rel.
-  Proof. by rewrite -ltl_later_unseal. Qed.
 
   Definition ltl_unseal :=
     (ltl_emp_unseal, ltl_pure_unseal, ltl_and_unseal, ltl_or_unseal,
      ltl_impl_unseal, ltl_forall_unseal, ltl_exist_unseal,
-     ltl_sep_unseal, ltl_wand_unseal,
-     ltl_persistently_unseal, ltl_later_unseal).
+     ltl_persistently_unseal).
 End restate.
 
 (** The final unseal tactic that also unfolds the BI layer. *)
@@ -814,8 +759,7 @@ Section ltl_axioms.
   Definition ltl_unseal' :=
     (@ltl_pure_unseal S L, @ltl_and_unseal S L, @ltl_or_unseal S L,
        @ltl_impl_unseal S L, @ltl_forall_unseal S L, @ltl_exist_unseal S L,
-         @ltl_later_unseal S L,
-    @ltl_next_unseal S L, @ltl_always_unseal S L).
+         @ltl_next_unseal S L, @ltl_always_unseal S L).
 
   Ltac ltl_unseal := rewrite !ltl_unseal' /=.
 
@@ -1086,6 +1030,11 @@ Section ltl_derived_rules.
     apply ltl_always_idemp_pre.
   Qed.
 
+  (* Override combine functionality that turns hyps into sep *)
+  Global Instance ltl_and_combine (P Q : tProp) :
+    CombineSepAs P Q (P ∧ Q) | 10.
+  Proof. by rewrite /CombineSepAs bi_sep_and. Qed.
+
   Lemma ltl_always_coind (P Q : tProp) :
     □ (P → (Q ∧ ○ (P ∨ □ Q))) ⊢ P → □ Q.
   Proof.
@@ -1101,9 +1050,8 @@ Section ltl_derived_rules.
     iSpecialize ("H" $! 0). simpl.
     iDestruct ("H" with "HP") as "[HQ H]".
     rewrite ltl_iter_forall.
-    iCombine "H H'" as "H". rewrite ltl_sep_and ltl_next_and.
+    iCombine "H H'" as "H". rewrite ltl_next_and.
     iRevert "H". rewrite ltl_wand_impl. iApply ltl_next_mono_strong.
-    rewrite ltl_wand_impl.
     iApply ltl_always_elim. iApply ltl_always_next_comm. iApply ltl_always_next.
     iIntros "!> [H H']".
     iDestruct "H" as "[HP|HQ]"; last first.

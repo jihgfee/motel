@@ -7,7 +7,7 @@ Definition tProp S L R := wf_trace S L R → Prop.
 Bind Scope bi_scope with tProp.
 Bind Scope bi_scope with trace.
 
-Section cofe.
+Section tProp.
   Context {S L : Type}.
   Context {R : S → L → S → Prop}.
   Notation tProp := (@tProp S L R).
@@ -18,7 +18,7 @@ Section cofe.
   Local Instance heapProp_equivalence : Equivalence (≡@{tProp}).
   Proof. split; repeat destruct 1; constructor; naive_solver. Qed.
   Canonical Structure tPropO := discreteO tProp.
-End cofe.
+End tProp.
 
 Section ltl_constructors.
   Context {S L : Type}.
@@ -234,10 +234,7 @@ Section ltl_constructors.
     | Datatypes.S n => ltl_next (ltl_next_iter n P)
     end.
 
-  Notation "∀ x .. y , P" :=
-    (ltl_forall (λ x, .. (ltl_forall (λ y, P%I)) ..)) : bi_scope.
-
-  Definition ltl_always_def (P : tProp) : tProp := (∀ n, ltl_next_iter n P)%I.
+  Definition ltl_always_def (P : tProp) : tProp := ltl_forall (λ n, ltl_next_iter n P)%I.
   Definition ltl_always_aux : seal (@ltl_always_def).
   Proof. by eexists. Qed.
   Definition ltl_always := unseal ltl_always_aux.
@@ -638,7 +635,6 @@ Section ltl_bi.
       apply impl_elim_l'.
   Qed.
 
-  (* TODO: Move out proofs to axiom modal laws *)
   Lemma ltl_bi_persistently_mixin :
     BiPersistentlyMixin
       ltl_entails ltl_emp ltl_and
@@ -1194,4 +1190,3 @@ Section ltl_proofmode.
   Qed.
 
 End ltl_proofmode.
-

@@ -161,15 +161,20 @@ End ltl_adequacy.
 
 Import tProp.
 
+(* TODO: Unhack this *)
 Ltac adequacy_unseal_core := 
-  try rewrite !ltl_impl_unseal /ltl_impl_def;
-  try rewrite !ltl_and_unseal /ltl_and_def;
-  try rewrite !ltl_always_adequate;
-  try rewrite ltl_next_unseal /ltl_next_def;
-  try setoid_rewrite ltl_eventually_adequate;
-  try setoid_rewrite ltl_now_f_adequate;
-  try setoid_rewrite ltl_now_label_f_adequate;
-  try setoid_rewrite ltl_now_adequate.
+  repeat (
+      first
+        [rewrite !ltl_impl_unseal /ltl_impl_def |
+          rewrite !ltl_and_unseal /ltl_and_def |
+          setoid_rewrite ltl_always_adequate |
+          rewrite ltl_next_unseal /ltl_next_def |
+          setoid_rewrite ltl_eventually_adequate |
+          rewrite ltl_forall_unseal /ltl_forall_def |
+          rewrite ltl_exist_unseal /ltl_exist_def |
+          setoid_rewrite ltl_now_f_adequate |
+          setoid_rewrite ltl_now_label_f_adequate |
+          setoid_rewrite ltl_now_adequate]).
 
 Ltac adequacy_unseal :=
   rewrite ltl_adequate; adequacy_unseal_core.

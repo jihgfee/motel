@@ -31,8 +31,19 @@ It can be installed following the build instructions of Iris.
 
 The proofmode interface can be instantiated by giving a linear transition system (LTS) model by providing a notion of state (S), label (L), and transition relation (R).
 
-The traces are possibly-finite: `tr := ⟨ ⟩ | ⟨ s ⟩ | s -[l]-> tr`, where `tail ⟨ s ⟩ = ⟨ ⟩` and `tail ⟨ ⟩ = ⟨ ⟩`.
+The traces are possibly-finite, and come with `head` and `tail` functions:
 
+```
+  tr := ⟨ ⟩ | ⟨ s ⟩ | s -[l]-> tr
+  tail (s -[l]-> tr) = tr , tail ⟨ s ⟩ = ⟨ ⟩, tail ⟨ ⟩ = ⟨ ⟩
+  head (s -[l]-> tr) = (s,l) , head ⟨ s ⟩ = (s,⊥), head ⟨ ⟩ = ⊥
+```
+
+The `head` and `tail` functions are reflected in the logic as  `↓ p` (now) and `○ P` (next).
+The remaining conventional primitives of LTL, such as `□ P` (globally), `◊ P` (eventually) and `P ∪ Q` (until) are derived from next.
+We additionally have `↓s x` and `↓l x` variants of `↓ p` that asserts the current state and label, respectively.
+
+The proofmode provides infrastructure for proving model-level axioms, that reflect the LTS transition relation in LTL.
 For example, given a model:
 
 ```
@@ -41,21 +52,21 @@ For example, given a model:
   R := b -[b]-> (¬ b) | b -[¬b]-> b
 ```
 
-The proofmode provides infrastructure for proving model-level axioms, that reflect the LTS transition relation in LTL, for example, the above relation corresponds to:
+The relation yields the following axiom:
 
 ```
-↓s b ⊢ (↓l b ∧ ○ ↓s (negb b)) ∨ (↓l (negb b) ∧ ○ ↓s b)
+  ↓s b ⊢ (↓l b ∧ ○ ↓s (¬ b)) ∨ (↓l (¬ b) ∧ ○ ↓s b)
 ```
 
-Additionally, one can express and prove properties such as fair progress, as follows:
+One can then express and prove properties about the model, such as fair progress:
 
 ```
   □ (◊ ↓l b) ∧ ◊ ↓s b ⊢ ○ ◊ ↓s ¬ b.
 ```
 
-The proofmode comes with tactics inherited from MoSeL, allowing (1) managing the proof context of the temporal logic, and (2) eliminating and introducing modalities while updating the proof context soundly and conservatively.
+The proofmode comes with tactics inherited from [MoSeL](https://gitlab.mpi-sws.org/iris/iris/-/blob/master/docs/proof_mode.md), allowing (1) managing the proof context of the temporal logic, and (2) eliminating and introducing modalities while updating the proof context soundly and conservatively.
 
-For example, a proof of the above can be started via `iIntros "[#Hfair Hs]"`, yielding:
+For example, a proof of the above can be started via `iIntros "[#Hfair Hs]"`, yielding the proof context:
 
 ```
   "Hfair" : ◊ ↓l b
@@ -107,3 +118,6 @@ The proofmode also inherits MoSeL's `iModIntro` tactic, that here introduce `○
 ```
 
 We can finally introduce `◊` via `iModIntro`, concluding the proof.
+
+The above proof can be found in
+[./theories/examples.v](./theories/examples.v)

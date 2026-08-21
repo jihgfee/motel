@@ -68,7 +68,7 @@ Section ltl_adequacy.
 
   Lemma ltl_always_next_equiv (P : tProp) :
     (□ P)%I ≡ (∀ n, ○^n P)%I.
-  Proof. by rewrite bi_intuitionistically_unseal ltl_always_unseal. Qed. 
+  Proof. by rewrite bi_intuitionistically_always ltl_always_unseal. Qed.
   
   Lemma ltl_always_adequate (P : tProp) tr :
     (□ P)%I tr ≡ ∀ n, P (wf_after n tr).
@@ -110,23 +110,31 @@ End ltl_adequacy.
 
 Import tProp.
 
-(* TODO: Unhack this *)
-Ltac adequacy_unseal_core := 
+Ltac unseal_unfold :=
+  unseal;
+  try rewrite /ltl_and_def;
+  try rewrite /ltl_or_def;
+  try rewrite /ltl_impl_def;
+  try rewrite /ltl_forall_def;
+  try rewrite /ltl_exist_def;
+  try rewrite /ltl_pure_def;
+  try rewrite ltl_next_unseal /ltl_next_def.
+
+Ltac iterator_unfold :=
+  try setoid_rewrite ltl_always_next_equiv;
+  try setoid_rewrite ltl_eventually_next_equiv.
+
+Ltac adequacy_unfold :=
   repeat (
       first
-        [rewrite !ltl_impl_unseal /ltl_impl_def |
-          rewrite !ltl_and_unseal /ltl_and_def |
-          setoid_rewrite ltl_always_adequate |
-          rewrite ltl_next_unseal /ltl_next_def |
-          setoid_rewrite ltl_eventually_adequate |
-          rewrite ltl_forall_unseal /ltl_forall_def |
-          rewrite ltl_exist_unseal /ltl_exist_def |
-          setoid_rewrite ltl_now_f_adequate |
-          setoid_rewrite ltl_now_label_f_adequate |
-          setoid_rewrite ltl_now_adequate]).
+        [rewrite !ltl_adequate |
+         setoid_rewrite ltl_now_f_adequate |
+         setoid_rewrite ltl_now_label_f_adequate |
+         setoid_rewrite ltl_next_adequate |
+         setoid_rewrite ltl_next_iter_adequate]).
 
 Ltac adequacy_unseal :=
-  rewrite ltl_adequate; adequacy_unseal_core.
+  iterator_unfold; unseal_unfold; adequacy_unfold.
 
 Ltac adequacy_unseal_goal :=
-  rewrite ltl_adequate; try (intros ?tr); adequacy_unseal_core.
+  iterator_unfold; unseal_unfold; adequacy_unfold.

@@ -727,8 +727,8 @@ Section restate.
   Proof. by rewrite -ltl_forall_unseal. Qed.
   Lemma ltl_exist_unseal : @bi_exist _ = @ltl_exist_def S L Rel.
   Proof. by rewrite -ltl_exist_unseal. Qed.
-  Lemma ltl_persistently_unseal : bi_persistently = @ltl_persistently S L Rel.
-  Proof. done. Qed.
+  Lemma ltl_persistently_unseal : bi_persistently = @ltl_always_def S L Rel.
+  Proof. rewrite -ltl_always_unseal. done. Qed.
 
   Definition ltl_unseal :=
     (ltl_emp_unseal, ltl_pure_unseal, ltl_and_unseal, ltl_or_unseal,
@@ -769,20 +769,11 @@ Section ltl_axioms.
 
   Import tProp.
 
-  Lemma bi_intuitionistically_unseal (P : tProp) :
+  Lemma bi_intuitionistically_always (P : tProp) :
     @bi_intuitionistically (@ltlI S L Rel) P ≡ ltl_always P.
   Proof. rewrite /bi_intuitionistically.
          rewrite /bi_affinely.
          rewrite left_id. done.
-  Qed.
-
-  Lemma bi_intuitionistically_unseal' (P : tProp) tr :
-    @bi_intuitionistically (@ltlI S L Rel) P tr ≡ ltl_always P tr.
-  Proof.
-    rewrite /bi_intuitionistically.
-    rewrite /bi_affinely.
-    unseal. simpl. rewrite /ltl_and_def /ltl_pure_def. simpl.
-    rewrite left_id. done.
   Qed.
 
   Lemma impl_intro_l (P Q : tProp) :
@@ -883,7 +874,7 @@ Section ltl_axioms.
 
   Lemma ltl_always_unfold (P : tProp) :
     □ P ⊣⊢ P ∧ ○ □ P.
-  Proof. rewrite bi_intuitionistically_unseal.
+  Proof. rewrite bi_intuitionistically_always.
     apply bi.equiv_entails_2.
     - apply ltl_always_unfold_pre_1.
     - apply ltl_always_unfold_pre_2.
@@ -891,15 +882,15 @@ Section ltl_axioms.
 
   Lemma ltl_always_intro (P : tProp) :
     □ (P → ○ P) ⊢ P → □ P.
-  Proof. rewrite !bi_intuitionistically_unseal. apply ltl_always_intro_pre. Qed.
+  Proof. rewrite !bi_intuitionistically_always. apply ltl_always_intro_pre. Qed.
 
   Lemma ltl_always_and (P Q : tProp) :
     (□ P) ∧ (□ Q) ⊢ □ (P ∧ Q).
-  Proof. rewrite !bi_intuitionistically_unseal. apply ltl_always_and_pre. Qed.
+  Proof. rewrite !bi_intuitionistically_always. apply ltl_always_and_pre. Qed.
 
   Lemma ltl_always_mono (P Q : tProp) :
     (P ⊢ Q)%I → (□ P ⊢ □ Q)%I.
-  Proof. rewrite !bi_intuitionistically_unseal. apply ltl_always_mono_pre. Qed.
+  Proof. rewrite !bi_intuitionistically_always. apply ltl_always_mono_pre. Qed.
 
   Lemma ltl_always_elim (P : tProp) :
     □ P ⊢ P.
@@ -908,7 +899,7 @@ Section ltl_axioms.
   (* Actual A1 / K□ *)
   Lemma ltl_always_mono_strong (P Q : tProp) :
     □ (P → Q) ⊢ □ P → □ Q.
-  Proof. rewrite !bi_intuitionistically_unseal. apply ltl_always_mono_strong_pre. Qed.
+  Proof. rewrite !bi_intuitionistically_always. apply ltl_always_mono_strong_pre. Qed.
 
 End ltl_axioms.
 
@@ -1013,7 +1004,7 @@ Section ltl_derived_rules.
   Lemma ltl_always_unseal' (P:tProp) : 
     (□ P)%I ≡ (∀ n, ○^n P)%I.
   Proof.   
-    rewrite !bi_intuitionistically_unseal.
+    rewrite !bi_intuitionistically_always.
     rewrite ltl_always_unseal.
     done.
   Qed.
@@ -1021,7 +1012,7 @@ Section ltl_derived_rules.
   Lemma ltl_always_idemp (P : tProp) :
     □ P ⊢ □ □ P.
   Proof.
-    rewrite !bi_intuitionistically_unseal.
+    rewrite !bi_intuitionistically_always.
     apply ltl_always_idemp_pre.
   Qed.
 

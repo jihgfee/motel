@@ -18,6 +18,7 @@ Section tProp.
   Local Instance heapProp_equivalence : Equivalence (≡@{tProp}).
   Proof. split; repeat destruct 1; constructor; naive_solver. Qed.
   Canonical Structure tPropO := discreteO tProp.
+  Global Instance tProp_cofe : Cofe tPropO := discrete_cofe _.
 End tProp.
 
 Section ltl_constructors.
@@ -308,6 +309,15 @@ Section ltl_axioms.
     constructor.
     intros.
     destruct tr as [[[]|]]; split; intros; simplify_eq; simpl in *; by apply H.
+  Qed.
+
+  Global Instance ltl_next_iter_proper n :
+    Proper ((≡) ==> (≡)) (@ltl_next_iter S L Rel n).
+  Proof.
+    intros P Q Heq.
+    induction n.
+    { simpl. done. } 
+    simpl. f_equiv. done.
   Qed.
 
   Lemma ltl_always_ne : NonExpansive (@ltl_always S L Rel).
@@ -863,15 +873,6 @@ Section ltl_axioms.
   Proof.
     iIntros "HP". rewrite -ltl_next_forall_1. iIntros (n).
     iSpecialize ("HP" $! (Datatypes.S n)). done.
-  Qed.
-
-  (* TODO: Move *)
-  Global Instance ltl_next_iter_proper n : Proper ((≡) ==> (≡)) (@ltl_next_iter S L Rel n).
-  Proof.
-    intros P Q Heq.
-    induction n.
-    { simpl. done. } 
-    simpl. f_equiv. done.
   Qed.
 
   Lemma ltl_next_mono (P Q : tProp) :

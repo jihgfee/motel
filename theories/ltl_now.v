@@ -1,6 +1,5 @@
 From ltl Require Import ltl ltl_fixpoints.
 
-(* TODO: Understand the need for this *)
 Import tProp.
 
 Section ltl_primitives.
@@ -39,9 +38,6 @@ Section ltl_now_axioms.
   Qed.
 
   Notation "Φ [[ F ]] Ψ" := (λ x, F (Φ x) (Ψ x)) (at level 1).
-  (* Definition pointwise_lifting {A B} (F : B → B → B) (P Q : A → B) : A → B := *)
-  (*   λ x, F (P x) (Q x). *)
-
 
   Lemma ltl_now_and (ϕ ψ : option (S * option L) → Prop) :
     ↓ ϕ ∧ ↓ ψ ⊣⊢@{tProp} ↓ (ϕ [[and]] ψ).
@@ -79,7 +75,7 @@ Section ltl_now_axioms.
     IntoAnd b (↓ (ϕ [[and]] ψ):tProp) (↓ ϕ) (↓ ψ).
   Proof. rewrite /IntoAnd. by rewrite ltl_now_and. Qed.
 
-  (* TODO: Is this needed? *)
+  (* OBS: This is needed as destruct pattern turns terms into sep *)
   Global Instance into_sep_now (ϕ ψ : option (S * option L) → Prop) :
     IntoSep (↓ (ϕ [[and]] ψ):tProp) (↓ ϕ) (↓ ψ).
   Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_and. Qed.
@@ -369,7 +365,7 @@ Section ltl_now_state_prod.
     IntoAnd b (↓s (s1,s2):tProp) (↓fs fst s1) (↓fs snd s2).
   Proof. rewrite /IntoAnd. by rewrite ltl_now_prod_and. Qed.
 
-  (* TODO: Is this needed? *)
+  (* OBS: This is needed as destruct pattern turns terms into sep *)
   Global Instance into_sep_now_prod (s1 : S1) (s2 : S2) :
     IntoSep (↓s (s1,s2):tProp) (↓fs fst s1) (↓fs snd s2).
   Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_prod_and. Qed.
@@ -417,7 +413,7 @@ Section ltl_now_label_prod.
     IntoAnd b (↓l (l1,l2):tProp) (↓fl fst l1) (↓fl snd l2).
   Proof. rewrite /IntoAnd. by rewrite ltl_now_label_prod_and. Qed.
 
-  (* TODO: Is this needed? *)
+  (* OBS: This is needed as destruct pattern turns terms into sep *)
   Global Instance into_sep_now_label_prod (l1 : L1) (l2 : L2) :
     IntoSep (↓l (l1,l2):tProp) (↓fl fst l1) (↓fl snd l2).
   Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_label_prod_and. Qed.

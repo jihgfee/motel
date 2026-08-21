@@ -679,8 +679,8 @@ Section stenning_ex.
 
   Theorem stenning_live_meta
     (tr : wf_trace stenning_state stenning_label stenning_trans) i :
-    fst <$> (fst <$> head_trace (tr_car tr)) = Some ((ASending, 0)) →
-    ∃ n, fst <$> (fst <$> head_trace (tr_car (wf_after n tr))) = Some (ASending, i).
+    fst <$> (fst <$> wf_head tr) = Some ((ASending, 0)) →
+    ∃ n, fst <$> (fst <$> wf_head (wf_after n tr)) = Some (ASending, i).
   Proof.
     pose proof (stenning_live i).
     revert H. adequacy_unseal.
@@ -689,8 +689,8 @@ Section stenning_ex.
 
   Theorem stenning_live_label_meta
     (tr : wf_trace stenning_state stenning_label stenning_trans) i :
-    fst <$> (fst <$> head_trace (tr_car tr)) = Some ((ASending, 0)) →
-    ∃ n, mjoin (snd <$> head_trace (tr_car (wf_after n tr))) = Some (A, Send (mAB i)).
+    fst <$> (fst <$> wf_head tr) = Some ((ASending, 0)) →
+    ∃ n, mjoin (snd <$> wf_head (wf_after n tr)) = Some (A, Send (mAB i)).
   Proof.
     pose proof (stenning_live_label i).
     revert H. adequacy_unseal. 

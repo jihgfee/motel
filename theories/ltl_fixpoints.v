@@ -546,7 +546,6 @@ Section ltl_until.
     iFrame. done.
   Qed.
 
-  (* TODO: Delete this (superfluous) lemma? *)
   Lemma ltl_always_eventually_idemp (P : tProp) :
     (□ ◊ P)%I ≡ (◊ □ ◊ P)%I.
   Proof. apply ltl_always_until_idemp. Qed.
@@ -559,7 +558,6 @@ Section ltl_until.
     intros. rewrite /EquivUntil. rewrite H. apply ltl_always_until_idemp.
   Qed.
 
-  (* TODO: Fiddle with priority order; hangs on priority 0/1 *)
   Global Instance into_wand_until q R (P Q1 Q2 : tProp) :
     IntoWand true false R Q1 Q2 →
     IntoWand true q R (P ∪ Q1) (P ∪ Q2) | 10.
@@ -585,7 +583,6 @@ Section ltl_until.
     @FromModal ltlI ltlI _ True%type modality_id (P ∪ Q) (P ∪ Q) (Q) | 2.
   Proof. intros _. apply ltl_until_intro_now. Qed.
 
-  (* TODO: Supply this for until instead *)
   Global Instance from_next_until (P Q : tProp) : FromNext (P ∪ Q) ((○ P) ∪ (○ Q)) | 2.
   Proof. rewrite /FromNext. by rewrite ltl_until_next_comm. Qed.
 

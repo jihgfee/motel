@@ -261,9 +261,9 @@ Section demo_ex.
 
   Theorem demo_theorem_meta
     (tr : wf_trace demo_state demo_label demo_steps) :
-    (∀ n b, ∃ m, mjoin (snd <$> (head_trace (tr_car (wf_after m (wf_after n tr))))) = Some b) →
-    (∃ n, (fst <$> head_trace (tr_car (wf_after n tr))) = Some true) →
-    ∃ n, fst <$> (head_trace (tr_car (wf_after n (wf_tail tr)))) = Some false.
+    (∀ n b, ∃ m, mjoin (snd <$> (wf_head (wf_after m (wf_after n tr)))) = Some b) →
+    (∃ n, (fst <$> wf_head (wf_after n tr)) = Some true) →
+    ∃ n, fst <$> wf_head (wf_after n (wf_tail tr)) = Some false.
   Proof.
     pose proof demo_theorem.
     revert H.
@@ -407,7 +407,8 @@ Section yes_no_ex.
     intros. inversion H; [destruct b'|destruct b0]; destruct b; simplify_eq; eexists _; econstructor; lia.
   Qed.
 
-  Axiom yn_fair : ∀ (b:bool), ⊢ (□ ◊ is_live b) → ◊ ↓l b : tProp.
+  Axiom yn_fair : ∀ (b:bool),
+    ⊢ (□ ◊ is_live b) → ◊ ↓l b : tProp.
 
   Lemma yn_step_b b i :
     ↓s (S i,b) ⊢ ↓l b ∧ ○ ↓s (S i - 1,negb b) ∨ ↓l (negb b) ∧ ○ (↓s (S i,b)) : tProp.

@@ -31,22 +31,24 @@
       },
       "original": {
         "ref": "robbert/elim_modal_modality",
+        "rev": "8e5e08bca0d33135a0d1a520ac3b6230248037ff",
         "type": "git",
         "url": "https://gitlab.mpi-sws.org/iris/iris"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1787823327,
-        "narHash": "sha256-e3xBvhx+iYCaX8XYRQTwOlCXvTFHldOgbBhAaxK1VHY=",
+        "lastModified": 1782498526,
+        "narHash": "sha256-K4dbMWsPKYGZAB6enMqxrTYP96t/k9LChZ7ofQC2/s8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a57a2093cd639aca269920172b157d9367dcbda8",
+        "rev": "43080df7e44a5873d9973e8d9de853e7097d6a2e",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
         "repo": "nixpkgs",
+        "rev": "43080df7e44a5873d9973e8d9de853e7097d6a2e",
         "type": "github"
       }
     },
@@ -61,15 +63,16 @@
     "stdpp-dev-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1786277153,
-        "narHash": "sha256-te1ny9RhG/4FiKbOcwEM+ijWj7Y+Lwgh259gyh+Mt7c=",
+        "lastModified": 1781340133,
+        "narHash": "sha256-avyhScUfoY65H6bMa4WK2bL4VGnPfVAuab0hqP4AG/I=",
         "ref": "refs/heads/master",
-        "rev": "9c7afbb6fa3f1df9e05fb44e73d3a103a209dd38",
-        "revCount": 3250,
+        "rev": "22033707c106f1e584640ec828e77fe4c13a9cd3",
+        "revCount": 3205,
         "type": "git",
         "url": "https://git@gitlab.mpi-sws.org/iris/stdpp"
       },
       "original": {
+        "rev": "22033707c106f1e584640ec828e77fe4c13a9cd3",
         "type": "git",
         "url": "https://git@gitlab.mpi-sws.org/iris/stdpp"
       }

@@ -1,15 +1,15 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/43080df7e44a5873d9973e8d9de853e7097d6a2e";
     flake-utils.url = "github:numtide/flake-utils";
 
     stdpp-dev-src = {
-      url = "git+https://git@gitlab.mpi-sws.org/iris/stdpp";
+      url = "git+https://git@gitlab.mpi-sws.org/iris/stdpp?rev=22033707c106f1e584640ec828e77fe4c13a9cd3";
       flake = false;
     };
 
     iris-dev-src = {
-      url = "git+https://gitlab.mpi-sws.org/iris/iris?ref=robbert/elim_modal_modality";
+      url = "git+https://gitlab.mpi-sws.org/iris/iris?ref=robbert/elim_modal_modality&rev=8e5e08bca0d33135a0d1a520ac3b6230248037ff";
       flake = false;
     };
   };

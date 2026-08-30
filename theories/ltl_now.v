@@ -143,19 +143,29 @@ Section ltl_now_state_label_lemmas.
   Lemma ltl_now_state_agree (x y : S) :
     ⊢ ↓s x → ↓s y → ⌜x = y⌝ : tProp.
   Proof.
-    constructor.
-    rewrite ltl_now_unseal.
-    unseal.
-    intros [[[]|]] _ H2 H3; inversion H2; simplify_eq; try done.
+    iIntros "Hx Hy".
+    iCombine "Hx Hy" as "Hxy".
+    simpl.
+    iDestruct (ltl_now_pure with "Hxy") as %[? [H1 H2]].
+    simpl in *.
+    rewrite option_fmap_id in H1.
+    rewrite option_fmap_id in H2.
+    iPureIntro.
+    destruct x0 as [[]|]; simpl in *; by simplify_eq.
   Qed.
 
   Lemma ltl_now_lbl_agree (x y : L) :
     ⊢ ↓l x → ↓l y → ⌜x = y⌝ : tProp.
   Proof.
-    constructor.
-    rewrite ltl_now_unseal.
-    unseal.
-    intros [[[]|]] _ H2 H3; inversion H2; inversion H3; simplify_eq; try done.
+    iIntros "Hx Hy".
+    iCombine "Hx Hy" as "Hxy".
+    simpl.
+    iDestruct (ltl_now_pure with "Hxy") as %[? [H1 H2]].
+    simpl in *.
+    rewrite option_fmap_id in H1.
+    rewrite option_fmap_id in H2.
+    iPureIntro.
+    destruct x0 as [[? []]|]; simpl in *; try by simplify_eq.
   Qed.
 
   Lemma trace_terminates s :

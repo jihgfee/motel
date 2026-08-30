@@ -457,7 +457,6 @@ Section ltl_until.
     rewrite ltl_eventually_next_comm. rewrite H. done.
   Qed.
 
-
   Global Instance elim_modal_until p P Q Q' R R' :
     IntoUntil R P Q →
     FromUntil P Q R →
@@ -581,6 +580,14 @@ Section ltl_until.
 
   Global Instance from_next_eventually (P : tProp) : FromNext (◊ P) (◊ ○ P).
   Proof. rewrite /FromNext. by rewrite ltl_eventually_next_comm. Qed.
+
+  Global Instance from_eventually_false :
+    FromUntil True False (False : tProp).
+  Proof. apply ltl_false_eventually. Qed.
+
+  Global Instance into_eventually_P (P : tProp) :
+    IntoUntil P True P | 10.
+  Proof. rewrite /IntoUntil. by iIntros "HP !>". Qed.
 
 End ltl_until.
 

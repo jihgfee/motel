@@ -997,6 +997,15 @@ Section ltl_derived_rules.
     - iApply ltl_always_next_comm_2.
   Qed.
 
+  Lemma ltl_iter_next_not n (P : tProp) :
+    ¬ ○^n P ⊣⊢ ○^n (¬ P).
+  Proof.
+    revert P.
+    induction n; intros P; [done|].
+    rewrite !ltl_next_iter_S.
+    rewrite IHn. rewrite ltl_next_not. done.
+  Qed.
+
   Lemma ltl_next_always_combine (P Q : tProp) :
     (□ P ∧ ○ Q) ⊢ (○ (Q ∧ □ P)).
   Proof. by rewrite bi.and_comm {1}ltl_always_next ltl_next_and. Qed.
@@ -1179,6 +1188,18 @@ Section ltl_proofmode.
       iModIntro. by iApply (HR with "HR").
     - intros -> HR. iIntros "HR HP".
       iModIntro. by iApply (HR with "HR").
+  Qed.
+
+  Instance into_persistent_next p (P Q : tProp) :
+    IntoPersistent p P Q →
+    IntoPersistent p (○ P) (○ Q).
+  Proof.
+    rewrite /IntoPersistent.
+    assert (∀ p (R : tProp), (<pers>?p ○ R)%I ≡ (○ <pers>?p R)%I).
+    { intros b R. pose proof (ltl_always_next_comm R).
+      destruct b; by rewrite /bi_intuitionistically /bi_affinely !left_id in H. }
+    rewrite H. intros HPQ.
+    rewrite HPQ. specialize (H true). simpl in *. rewrite -H. done.
   Qed.
 
 End ltl_proofmode.

@@ -23,6 +23,19 @@ Section examples.
   Lemma eventually_primer' (P Q R : tProp) : ⊢ □ (P → □ ◊ Q) → ◊ P → ◊ R →  □ ◊ Q.
   Proof. iIntros "#HPQ HP HR". iMod "HP". iApply "HPQ". done. Qed.
 
+  Lemma eventually_primer'' (P1 P2 Q1 Q2 : tProp) :
+    (□ (P1 → □ P2)) ∧ (□ (Q1 → □ Q2)) ⊢ ◊ P1 → ◊ Q1 → ◊ □ (P2 ∧ Q2).
+  Proof.
+    iIntros "[#HP' #HQ'] HP HQ".
+    iCombine "HP HQ" as "[HPQ|HPQ]".
+    - iMod "HPQ" as "[HP HQ]". iDestruct ("HP'" with "HP") as "#HP''".
+      iMod "HQ". iDestruct ("HQ'" with "HQ") as "#HQ''".
+      iModIntro. iModIntro. iFrame "#".
+    - iMod "HPQ" as "[HP HQ]". iDestruct ("HQ'" with "HQ") as "#HQ''".
+      iMod "HP". iDestruct ("HP'" with "HP") as "#HP''".
+      iModIntro. iModIntro. iFrame "#".
+  Qed.
+
   Lemma until_primer (P Q R : tProp) :
     ⊢ □ (R → P ∪ Q) → (○ P ∪ ○ R) → ◊ ○ R → ○ (P ∪ Q).
   Proof. iIntros "#HPQ HP HR". iMod "HP". iModIntro. iApply "HPQ". done. Qed.

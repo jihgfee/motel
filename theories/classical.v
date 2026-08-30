@@ -1,5 +1,5 @@
 From Stdlib.Logic Require Import ClassicalFacts.
-From ltl Require Import ltl ltl_fixpoints ltl_now.
+From ltl Require Import ltl ltl_fixpoints ltl_now ltl_adequacy.
 
 Axiom excluded_middle : ∀ P, P ∨ ¬ P.
 
@@ -21,7 +21,6 @@ Qed.
 Section classical.
   Context {S L : Type}.
   Context {Rel : S → L → S → Prop}.
-  Context `{HLTL : LTL S L Rel}.
 
   Notation tProp := (tProp S L Rel).
 
@@ -34,15 +33,15 @@ Section classical.
     pose proof (excluded_middle (P tr)).
     unseal. done.
   Qed.
-    
+
   Lemma ltl_until_not_until (P Q : tProp) :
     P ∪ Q ⊢ (P ∧ ¬ Q) ∪ Q.
   Proof.
     iDestruct (ltl_excluded_middle Q) as "[HQ|HQ]".
-    { iIntros "H". 
+    { iIntros "H".
       iEval (rewrite ltl_until_unfold).
       iLeft. done. }
-    iIntros "H". iRevert "HQ".    
+    iIntros "H". iRevert "HQ".
     iApply (ltl_until_ind_strong with "[] H").
     iIntros "!> [HQ|(HP&HPQ&IH)] HQ'".
     { by rewrite -ltl_until_intro_now. }
@@ -53,6 +52,42 @@ Section classical.
     iDestruct (ltl_excluded_middle Q) as "[HQ|HQ]".
     { iEval (rewrite ltl_until_unfold). iLeft. done. }
     by iApply "IH".
+  Qed.
+
+  Lemma ltl_neg_neg (P : tProp) :
+    ¬ ¬ P ⊢ P.
+  Proof.
+    iIntros "HP".
+    iPoseProof (ltl_excluded_middle P) as "[$|HP']".
+    iExFalso. iApply "HP". done.
+  Qed.
+
+  Lemma ltl_always_not_eventually_not (P : tProp) :
+    (□ P)%I ≡ (¬ (◊ (¬ P)))%I.
+  Proof.
+    iSplit.
+    - iIntros "#HP HP'".
+      iMod "HP'".
+      iApply "HP'". done.
+    - iIntros "HP".
+      rewrite ltl_not_eventually_always_not.
+      iDestruct "HP" as "#HP".
+      iModIntro.
+      by iApply ltl_neg_neg.
+  Qed.
+
+  Lemma ltl_eventually_not_always_not (P : tProp) :
+    (◊ P)%I ≡ (¬ (□ (¬ P)))%I.
+  Proof.
+    iSplit.
+    - rewrite ltl_always_unseal'.
+      rewrite !ltl_eventually_next_equiv.
+      iIntros "[%n HP]".
+      iIntros "HP'". iSpecialize ("HP'" $! n).
+      rewrite -ltl_iter_next_not. iApply "HP'". done.
+    - iIntros "HP".      
+      rewrite -ltl_not_eventually_always_not.
+      by iApply ltl_neg_neg.
   Qed.
 
   Lemma ltl_terminates_dec :
@@ -74,7 +109,7 @@ Section classical.
     iAssert (⌜∃ b s', Rel s b s'⌝)%I as %(?&?&?).
     { assert (reducible Rel s ∨ ¬ reducible Rel s) as [(?&?&Hred)|Hred];
         [|iPureIntro; eexists _,_; eauto|].
-      { apply excluded_middle. }      
+      { apply excluded_middle. }
       iDestruct (trace_terminates with "Hs") as "Hs"; [done|].
       iExFalso.
       rewrite -ltl_false_next. iModIntro.

@@ -37,22 +37,12 @@ Section ltl_now_axioms.
     constructor. intros. by apply HPQ.
   Qed.
 
-  Notation "Φ [[ F ]] Ψ" := (λ x, F (Φ x) (Ψ x)) (at level 1).
+  Lemma ltl_now_forall {A} (P : A → tPred) :
+    (∀ (x:A), ↓ (P x)) ⊣⊢@{tProp} (↓ (λ osl, (∀ x, (P x) osl))%type).
+  Proof. rewrite ltl_now_unseal. unseal. done. Qed.
 
-  Lemma ltl_now_and (ϕ ψ : option (S * option L) → Prop) :
-    ↓ ϕ ∧ ↓ ψ ⊣⊢@{tProp} ↓ (ϕ [[and]] ψ).
-  Proof. rewrite ltl_now_unseal. unseal. done. Qed.
-  
-  Lemma ltl_now_or P Q :
-    ↓ P ∨ ↓ Q ⊣⊢@{tProp} (↓ (P [[or]] Q)).
-  Proof. rewrite ltl_now_unseal. unseal. done. Qed.
-  
   Lemma ltl_now_exists {A} (P : A → tPred) :
     (∃ (x:A), ↓ (P x)) ⊣⊢@{tProp} (↓ (λ osl, (∃ x, (P x) osl))%type).
-  Proof. rewrite ltl_now_unseal. unseal. done. Qed.
-
-  Lemma ltl_forall_exists {A} (P : A → tPred) :
-    (∀ (x:A), ↓ (P x)) ⊣⊢@{tProp} (↓ (λ osl, (∀ x, (P x) osl))%type).
   Proof. rewrite ltl_now_unseal. unseal. done. Qed.
 
   Lemma ltl_now_not (P : option (S * option L) → Prop) :
@@ -67,20 +57,9 @@ Section ltl_now_axioms.
     intros. simplify_eq; eexists _; eauto.
   Qed.
 
-  Global Instance ltl_now_combine (ϕ ψ : option (S * option L) → Prop) :
-    CombineSepAs (↓ ϕ) (↓ ψ) (↓ (ϕ [[and]] ψ):tProp).
-  Proof. by rewrite /CombineSepAs bi_sep_and ltl_now_and. Qed.
-
-  Global Instance into_and_now b (ϕ ψ : option (S * option L) → Prop) :
-    IntoAnd b (↓ (ϕ [[and]] ψ):tProp) (↓ ϕ) (↓ ψ).
-  Proof. rewrite /IntoAnd. by rewrite ltl_now_and. Qed.
-
-  (* OBS: This is needed as destruct pattern turns terms into sep *)
-  Global Instance into_sep_now (ϕ ψ : option (S * option L) → Prop) :
-    IntoSep (↓ (ϕ [[and]] ψ):tProp) (↓ ϕ) (↓ ψ).
-  Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_and. Qed.
-
 End ltl_now_axioms.
+
+Notation "Φ ⟨⟨ F ⟩⟩ Ψ" := (λ x, F (Φ x) (Ψ x)) (at level 1).
 
 Section ltl_now_lemmas.
   Context {S L : Type}.
@@ -88,6 +67,56 @@ Section ltl_now_lemmas.
 
   Notation tProp := (tProp S L Rel).
   Notation tPred := (option (S * option L) → Prop).
+
+  Lemma ltl_now_and (ϕ ψ : option (S * option L) → Prop) :
+    ↓ ϕ ∧ ↓ ψ ⊣⊢@{tProp} ↓ (ϕ ⟨⟨and⟩⟩ ψ).
+  Proof.
+    iSplit.
+    - iIntros "[H1' H2']".
+      iAssert ((∀ x : bool, ↓ (if x then ϕ else ψ)))%I with "[H1' H2']" as "H".
+      { iIntros ([]); done. }
+      rewrite ltl_now_forall.
+      iApply (ltl_now_mono with "H").
+      intros osl H. split; [apply (H true)|apply (H false)].
+    - iIntros "H".
+      iAssert ((∀ x : bool, ↓ (if x then ϕ else ψ)))%I with "[H]" as "H".
+      { iIntros ([]); iApply (ltl_now_mono with "H"); naive_solver. }
+      iSplit; [iApply ("H" $! true)|iApply ("H" $! false)].
+  Qed.
+
+  Lemma ltl_now_or ϕ ψ :
+    ↓ ϕ ∨ ↓ ψ ⊣⊢@{tProp} (↓ (ϕ ⟨⟨or⟩⟩ ψ)).
+  Proof.
+    iSplit.
+    - iIntros "[H|H]".
+      + iAssert ((∃ x : bool, ↓ (if x then ϕ else ψ)))%I with "[H]" as "H".
+        { iExists true. done. }
+        rewrite ltl_now_exists.
+        iApply (ltl_now_mono with "H").
+        intros osl [b H]. destruct b; eauto.
+      + iAssert ((∃ x : bool, ↓ (if x then ϕ else ψ)))%I with "[H]" as "H".
+        { iExists false. done. }
+        rewrite ltl_now_exists.
+        iApply (ltl_now_mono with "H").
+        intros osl [b H]. destruct b; eauto.
+    - iIntros "H".
+      iAssert ((∃ x : bool, ↓ (if x then ϕ else ψ)))%I with "[H]" as "H".
+      { rewrite ltl_now_exists. iApply (ltl_now_mono with "H"); intros ? []; [exists true|exists false]; done. }
+      iDestruct "H" as ([]) "H"; eauto.
+  Qed.
+
+  Global Instance ltl_now_combine (ϕ ψ : option (S * option L) → Prop) :
+    CombineSepAs (↓ ϕ) (↓ ψ) (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp).
+  Proof. by rewrite /CombineSepAs bi_sep_and ltl_now_and. Qed.
+
+  Global Instance into_and_now b (ϕ ψ : option (S * option L) → Prop) :
+    IntoAnd b (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp) (↓ ϕ) (↓ ψ).
+  Proof. rewrite /IntoAnd. by rewrite ltl_now_and. Qed.
+
+  (* OBS: This is needed as destruct pattern turns terms into sep *)
+  Global Instance into_sep_now (ϕ ψ : option (S * option L) → Prop) :
+    IntoSep (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp) (↓ ϕ) (↓ ψ).
+  Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_and. Qed.
 
   Lemma ltl_now_false (P Q : option (S *option L) → Prop) :
     (∀ osl, P osl → Q osl → False) → (↓ P:tProp) -∗ ↓ Q -∗ False.

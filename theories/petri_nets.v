@@ -32,10 +32,16 @@ Arguments enabled {_ _ _ _ _ _} _ _.
 Section example.
 
   (*
-   t1 -> p1 ---> t2 ---> p2 ---> t4 ---> p4
-          |                              ^
-          -----> t3 ---> p3 ---> t5 ---> |
+    Model:
+      t0 -> p0 ---> t1 ---> p1 ---> t3 ---> p3
+      |                      ^
+      -----> t2 ---> p2 ---> |
+
+    Property: ◊ p3 > 0
+
+    Fairness assumption: □ ◊ (↓s' enabled t) ⊢@{tProp} ◊ ↓l t
    *)
+
 
   Inductive place : Set := p0 | p1 | p2 | p3.
   Inductive transition : Set := t0 | t1 | t2 | t3.

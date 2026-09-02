@@ -311,7 +311,7 @@ Section example.
     iDestruct (fair with "Ht2") as "Ht2'".
     iAssert (□ ◊ (↓s' (enabled input_arcs t3)))%I as "#Ht3".
     {
-      iAssert (◊ ↓s' (λ s, (s:gmap place nat) !!! p1 > 0))%I as "Hn1".
+      iAssert (◊ ↓s' (λ s, (∃ x, s !! p1 = Some x ∧ x > 0)%type))%I as "Hn1".
       {
         iMod "Ht1'".
         iDestruct "Hs" as (????) "Hs".
@@ -320,8 +320,8 @@ Section example.
         do 2 iModIntro.
         iApply (ltl_now_mono_state with "Ht1'").
         intros s <-.
-        assert (({[p0:=n0 - 1; p1:=n1 + 1; p2:=n2; p3:=n3]}: gmap place nat) !!! p1 = n1 + 1) by set_solver.
-        rewrite H. lia.
+        simplify_map_eq.
+        eexists _. split; [done|lia].
       }
       iModIntro.
       iMod "Hn1".
@@ -336,9 +336,8 @@ Section example.
           simpl in *. 
           destruct H as [H1 H2].
           simplify_eq.
-          assert (({[p0:=n0; p1:=0; p2:=n2; p3:=n3]} : gmap place nat) !!! p1 = 0) by set_solver.
-          rewrite H in H1. lia.
-        }
+          destruct H1 as (x&HSome&Hx).
+          simplify_map_eq. lia. }
         iDestruct (t2_fire with "Ht2'' Hs") as "Hs".
         iEval (rewrite -ltl_next_eventually).
         do 2 iModIntro.
@@ -363,7 +362,7 @@ Section example.
       }
       iEval (rewrite -ltl_next_eventually).
       (* TODO: add destruct typeclass for next *)
-      iAssert (○ ((↓s' λ s : gmap place nat, s !!! p1 > 0) ∨
+      iAssert (○ ((↓s' λ s : gmap place nat, (∃ x, s !! p1 = Some x ∧ x > 0)%type) ∨
                  (↓s' enabled input_arcs t3)))%I with "[Hs Hn1]" as "H".
       { iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
         iDestruct (trace_steps with "Hs") as (l s' _) "[Hl Hs]".
@@ -374,28 +373,25 @@ Section example.
           iDestruct (ltl_now_pure with "Hs'") as %[[[]|] H]; simpl in *; try done.
           destruct H as [H1 H2].
           subst.
-          assert (({[p0:=n0; p1:=0; p2:=0; p3:=n3]} : gmap place nat) !!! p1 = 0) by set_solver.
-          rewrite H in H2. lia.
+          destruct H2 as (x&HSome&Hx).
+          simplify_map_eq. lia.
         }
         destruct l.
         - iDestruct (t0_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
           iApply (ltl_now_mono_state with "Hs'").
           intros s <-.
-          assert (({[p0:=n0 + 1; p1:=Datatypes.S n1; p2:=0; p3:=n3]} : gmap place nat) !!! p1 = Datatypes.S n1) as Heq by set_solver. rewrite Heq.
-          lia.
+          eexists _. simplify_map_eq. split; [done|lia].
         - iDestruct (t1_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
           iApply (ltl_now_mono_state with "Hs'").
           intros s <-.
-          assert (({[p0:=n0 - 1; p1:=Datatypes.S (n1 + 1); p2:=0; p3:=n3]} : gmap place nat) !!! p1 = Datatypes.S (n1 + 1)) as Heq by set_solver. rewrite Heq.
-          lia.
+          eexists _. simplify_map_eq. split; [done|lia].
         - iDestruct (t2_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
           iApply (ltl_now_mono_state with "Hs'").
           intros s <-.
-          assert (({[p0:=n0 - 1; p1:=Datatypes.S n1; p2:=1; p3:=n3]} : gmap place nat) !!! p1 = Datatypes.S n1) as Heq by set_solver. rewrite Heq.
-          lia.
+          eexists _. simplify_map_eq. split; [done|lia].
         - iDestruct (trace_steps_label with "[$Hs' $Hl]") as (s'' HR) "H".
           { apply always_reducible. }
           inversion HR.
@@ -404,8 +400,7 @@ Section example.
           specialize (H p2 H3).
           clear H0 H1 H2 H3.
           destruct H as (x&HSome&Hx).
-          assert (({[p0:=n0; p1:=Datatypes.S n1; p2:=0; p3:=n3]} : gmap place nat) !! p2 = Some 0) by set_solver.
-          rewrite H in HSome. simplify_eq. lia.
+          simplify_map_eq. lia.
       }
       iModIntro.
       iDestruct "H" as "[H'|H']".

@@ -122,7 +122,7 @@ Section example.
     destruct p; set_solver.
   Qed.
 
-  Lemma t0_fire_alt n0 n1 n2 n3 :
+  Lemma t0_fire n0 n1 n2 n3 :
     ↓l t0 ⊢@{tProp}
     ↓s {[p0 := n0;   p1 := n1;   p2 := n2; p3 := n3]} →
     ○ ↓s {[p0 := n0+1; p1 := n1;   p2 := n2; p3 := n3]}.
@@ -147,7 +147,7 @@ Section example.
     destruct i; set_solver.
   Qed.
 
-  Lemma t1_fire_alt n0 n1 n2 n3 :
+  Lemma t1_fire n0 n1 n2 n3 :
     ↓l t1 ⊢@{tProp}
             ↓s {[p0 := n0;   p1 := n1;   p2 := n2; p3 := n3]} →
             ○ ↓s {[p0 := n0-1; p1 := n1+1; p2 := n2; p3 := n3]}.
@@ -171,7 +171,7 @@ Section example.
     apply map_eq. intros i. destruct i; set_solver.
   Qed.
 
-  Lemma t2_fire_alt n0 n1 n2 n3 :
+  Lemma t2_fire n0 n1 n2 n3 :
     ↓l t2 ⊢@{tProp}
             ↓s {[p0 := n0;   p1 := n1; p2 := n2;   p3 := n3]} →
             ○  ↓s {[p0 := n0-1; p1 := n1; p2 := n2+1; p3 := n3]}.
@@ -195,7 +195,7 @@ Section example.
     apply map_eq. intros i. destruct i; set_solver.
   Qed.
 
-  Lemma t3_fire_alt n0 n1 n2 n3 :
+  Lemma t3_fire n0 n1 n2 n3 :
     ↓l t3 ⊢@{tProp}
             ↓s {[p0 := n0;   p1 := n1 ; p2 := n2;   p3 := n3 ]} →
             ○  ↓s {[p0 := n0; p1 := n1 - 1; p2 := n2 - 1; p3 := n3 + 1]}.
@@ -241,13 +241,13 @@ Section example.
     iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
     iDestruct (petri_st_lbl with "Hs'") as (l) "Hl".
     destruct l.
-    - iDestruct (t0_fire_alt with "Hl Hs") as "Hs".
+    - iDestruct (t0_fire with "Hl Hs") as "Hs".
       iModIntro. iFrame.
-    - iDestruct (t1_fire_alt with "Hl Hs") as "Hs".
+    - iDestruct (t1_fire with "Hl Hs") as "Hs".
       iModIntro. iFrame.
-    - iDestruct (t2_fire_alt with "Hl Hs") as "Hs".
+    - iDestruct (t2_fire with "Hl Hs") as "Hs".
       iModIntro. iFrame.
-    - iDestruct (t3_fire_alt with "Hl Hs") as "Hs".
+    - iDestruct (t3_fire with "Hl Hs") as "Hs".
       iModIntro. iFrame.
   Qed.
 
@@ -289,7 +289,7 @@ Section example.
       iModIntro.
       iMod "Ht0'".
       iDestruct "Hs" as (????) "Hs".
-      iDestruct (t0_fire_alt n0 with "Ht0' Hs") as "H'".
+      iDestruct (t0_fire n0 with "Ht0' Hs") as "H'".
       iEval (rewrite -ltl_next_eventually).
       do 2 iModIntro.
       iSplit.
@@ -317,7 +317,7 @@ Section example.
       {
         iMod "Ht1'".
         iDestruct "Hs" as (????) "Hs".
-        iDestruct (t1_fire_alt with "Ht1' Hs") as "Ht1'".
+        iDestruct (t1_fire with "Ht1' Hs") as "Ht1'".
         iEval (rewrite -ltl_next_eventually).
         do 2 iModIntro.
         iApply (ltl_now_mono with "Ht1'").
@@ -339,7 +339,7 @@ Section example.
           assert (({[p0:=n0; p1:=0; p2:=n2; p3:=n3]} : gmap place nat) !!! p1 = 0) by set_solver.
           rewrite H in Hs1. lia.
         }
-        iDestruct (t2_fire_alt with "Ht2'' Hs") as "Hs".
+        iDestruct (t2_fire with "Ht2'' Hs") as "Hs".
         iEval (rewrite -ltl_next_eventually).
         do 2 iModIntro.
         iApply (ltl_now_mono with "Hs").
@@ -379,19 +379,19 @@ Section example.
           rewrite H in H2. lia.
         }
         destruct l.
-        - iDestruct (t0_fire_alt with "Hl Hs'") as "Hs'".
+        - iDestruct (t0_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
           iApply (ltl_now_mono with "Hs'").
           intros [[]|]=> /= Heq; try naive_solver. subst.
           assert (({[p0:=n0 + 1; p1:=Datatypes.S n1; p2:=0; p3:=n3]} : gmap place nat) !!! p1 = Datatypes.S n1) as Heq by set_solver. rewrite Heq.
           lia.
-        - iDestruct (t1_fire_alt with "Hl Hs'") as "Hs'".
+        - iDestruct (t1_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
           iApply (ltl_now_mono with "Hs'").
           intros [[]|]=> /= Heq; try naive_solver. subst.
           assert (({[p0:=n0 - 1; p1:=Datatypes.S (n1 + 1); p2:=0; p3:=n3]} : gmap place nat) !!! p1 = Datatypes.S (n1 + 1)) as Heq by set_solver. rewrite Heq.
           lia.
-        - iDestruct (t2_fire_alt with "Hl Hs'") as "Hs'".
+        - iDestruct (t2_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
           iApply (ltl_now_mono with "Hs'").
           intros [[]|]=> /= Heq; try naive_solver. subst.
@@ -415,7 +415,7 @@ Section example.
     iDestruct (fair with "Ht3") as "Ht3'".
     iMod "Ht3'".
     iDestruct "Hs" as (????) "Hs".
-    iDestruct (t3_fire_alt with "Ht3' Hs") as "Hs".
+    iDestruct (t3_fire with "Ht3' Hs") as "Hs".
     iEval (rewrite -ltl_next_eventually).
     do 2 iModIntro.
     iApply (ltl_now_mono with "Hs").

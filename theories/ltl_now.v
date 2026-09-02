@@ -169,6 +169,30 @@ Section ltl_now_state_label_lemmas.
 
   Notation tProp := (tProp S L Rel).
 
+  Lemma ltl_now_mono_state (ϕ ψ : S → Prop) :
+    (∀ s, ϕ s → ψ s) → ⊢@{tProp} ↓s' ϕ → ↓s' ψ.
+  Proof.
+    iIntros (H). iApply ltl_now_mono.
+    intros [[]|]=> /=; try done. apply H.
+  Qed.
+
+  Lemma ltl_now_mono_label (ϕ ψ : L → Prop) :
+    (∀ l, ϕ l → ψ l) → ⊢@{tProp} ↓l' ϕ → ↓l' ψ.
+  Proof.
+    iIntros (H). iApply ltl_now_mono.
+    intros [[? []]|]=> /=; try done. apply H.
+  Qed.
+
+  Lemma ltl_now_state_and (ϕ ψ : S → Prop) :
+    ⊢ ↓s' ϕ → ↓s' ψ → ↓s' (ϕ ⟨⟨and⟩⟩ ψ) : tProp.
+  Proof.
+    iIntros "Hx Hy".
+    iCombine "Hx Hy" as "Hxy".
+    simpl.
+    iApply (ltl_now_mono with "Hxy").
+    intros [[]|]=> /=; try by naive_solver.
+  Qed.
+
   Lemma ltl_now_state_agree (x y : S) :
     ⊢ ↓s x → ↓s y → ⌜x = y⌝ : tProp.
   Proof.
@@ -195,6 +219,16 @@ Section ltl_now_state_label_lemmas.
     rewrite option_fmap_id in H2.
     iPureIntro.
     destruct x0 as [[? []]|]; simpl in *; try by simplify_eq.
+  Qed.
+
+  Lemma ltl_now_label_and (ϕ ψ : L → Prop) :
+    ⊢ ↓l' ϕ → ↓l' ψ → ↓l' (ϕ ⟨⟨and⟩⟩ ψ) : tProp.
+  Proof.
+    iIntros "Hx Hy".
+    iCombine "Hx Hy" as "Hxy".
+    simpl.
+    iApply (ltl_now_mono with "Hxy").
+    intros [[? []]|]=> /=; try by naive_solver.
   Qed.
 
   Lemma trace_terminates s :
@@ -359,6 +393,20 @@ Section ltl_now_state_label_lemmas.
     iCombine "Hs' Hdone" as "H".
     rewrite ltl_now_pure.
     iDestruct "H" as %([[?[]]|]&?&?); naive_solver.
+  Qed.
+  
+  Global Instance ltl_now_state_combine (ϕ ψ : S → Prop) :
+    CombineSepAs (↓s' ϕ) (↓s' ψ) (↓s' (ϕ ⟨⟨and⟩⟩ ψ):tProp).
+  Proof. 
+    rewrite /CombineSepAs bi_sep_and.
+    iIntros "[H1 H2]". iApply (ltl_now_state_and with "H1 H2").
+  Qed.
+
+  Global Instance ltl_now_label_combine (ϕ ψ : L → Prop) :
+    CombineSepAs (↓l' ϕ) (↓l' ψ) (↓l' (ϕ ⟨⟨and⟩⟩ ψ):tProp).
+  Proof. 
+    rewrite /CombineSepAs bi_sep_and.
+    iIntros "[H1 H2]". iApply (ltl_now_label_and with "H1 H2").
   Qed.
 
 End ltl_now_state_label_lemmas.

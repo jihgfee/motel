@@ -10,13 +10,10 @@ Section petri_nets.
   Context (input_arcs : gset (place * transition)).
   Context (output_arcs : gset (transition * place)).
 
-  Definition S := gmap place nat.
-  Definition L := transition.
+  Definition enabled (t : transition) (s:gmap place nat) : Prop :=
+    (∀ p, (p,t) ∈ input_arcs → ∃ x, s !! p = Some x ∧ x > 0).
 
-  Definition enabled (t : transition) (s:S) : Prop :=
-    (∀ p, (p,t) ∈ input_arcs → s !!! p > 0).
-
-  Inductive R : S → L → S → Prop :=
+  Inductive R : gmap place nat → transition → gmap place nat → Prop :=
   | fire s1 s2 t :
       enabled t s1 →
       (∀ p, (p,t) ∉ input_arcs → (t,p) ∉ output_arcs → s2 !! p = s1 !! p) →
@@ -41,7 +38,6 @@ Section example.
 
     Fairness assumption: □ ◊ (↓s' enabled t) ⊢@{tProp} ◊ ↓l t
    *)
-
 
   Inductive place : Set := p0 | p1 | p2 | p3.
   Inductive transition : Set := t0 | t1 | t2 | t3.
@@ -138,15 +134,15 @@ Section example.
     { apply always_reducible. }
     iModIntro. inversion HRel.
     simplify_eq.
-    iApply (ltl_now_mono with "H").
-    intros [[]|]=> /= Heq; try done; simplify_eq.
-    assert (g !! p0 = Some (n0 + 1)).
+    iApply (ltl_now_mono_state with "H").
+    intros s ->.
+    assert (s !! p0 = Some (n0 + 1)).
     { apply H2; set_solver. }
-    assert (g !! p1 = Some n1).
+    assert (s !! p1 = Some n1).
     { rewrite H0; set_solver. }
-    assert (g !! p2 = Some n2).
+    assert (s !! p2 = Some n2).
     { rewrite H0; set_solver. }
-    assert (g !! p3 = Some n3).
+    assert (s !! p3 = Some n3).
     { rewrite H0; set_solver. }
     clear HRel H H0 H1 H2.
     apply map_eq. intros i.
@@ -163,15 +159,15 @@ Section example.
     { apply always_reducible. }
     iModIntro. inversion HRel.
     simplify_eq.
-    iApply (ltl_now_mono with "H").
-    intros [[]|]=> /= Heq; try done; simplify_eq.
-    assert (g !! p0 = Some $ n0 - 1).
+    iApply (ltl_now_mono_state with "H").
+    intros s ->.
+    assert (s !! p0 = Some $ n0 - 1).
     { apply H1; set_solver. }
-    assert (g !! p1 = Some $ n1 + 1).
+    assert (s !! p1 = Some $ n1 + 1).
     { apply H2; set_solver. }
-    assert (g !! p2 = Some n2).
+    assert (s !! p2 = Some n2).
     { rewrite H0; set_solver. }
-    assert (g !! p3 = Some n3).
+    assert (s !! p3 = Some n3).
     { rewrite H0; set_solver. }
     clear HRel H H0 H1 H2.
     apply map_eq. intros i. destruct i; set_solver.
@@ -187,15 +183,15 @@ Section example.
     { apply always_reducible. }
     iModIntro. inversion HRel.
     simplify_eq.
-    iApply (ltl_now_mono with "H").
-    intros [[]|]=> /= Heq; try done; simplify_eq.
-    assert (g !! p0 = Some $ n0 - 1).
+    iApply (ltl_now_mono_state with "H").
+    intros s ->.
+    assert (s !! p0 = Some $ n0 - 1).
     { apply H1; set_solver. }
-    assert (g !! p1 = Some n1).
+    assert (s !! p1 = Some n1).
     { rewrite H0; set_solver. }
-    assert (g !! p2 = Some $ n2 + 1).
+    assert (s !! p2 = Some $ n2 + 1).
     { apply H2; set_solver. }
-    assert (g !! p3 = Some n3).
+    assert (s !! p3 = Some n3).
     { rewrite H0; set_solver. }
     clear HRel H H0 H1 H2.
     apply map_eq. intros i. destruct i; set_solver.
@@ -211,15 +207,15 @@ Section example.
     { apply always_reducible. }
     iModIntro. inversion HRel.
     simplify_eq.
-    iApply (ltl_now_mono with "H").
-    intros [[]|]=> /= Heq; try done; simplify_eq.
-    assert (g !! p0 = Some n0).
+    iApply (ltl_now_mono_state with "H").
+    intros s ->.
+    assert (s !! p0 = Some n0).
     { apply H0; set_solver. }
-    assert (g !! p1 = Some $ n1 - 1).
+    assert (s !! p1 = Some $ n1 - 1).
     { apply H1; set_solver. }
-    assert (g !! p2 = Some $ n2 - 1).
+    assert (s !! p2 = Some $ n2 - 1).
     { apply H1; set_solver. }
-    assert (g !! p3 = Some $ n3 + 1).
+    assert (s !! p3 = Some $ n3 + 1).
     { apply H2; set_solver. }
     clear HRel H H0 H1 H2.
     apply map_eq. intros i. destruct i; set_solver.
@@ -279,7 +275,7 @@ Section example.
   Qed.
 
   Theorem petri_live :
-    ↓s {[p0:=0;p1:=0;p2:=0;p3:=0]} ⊢@{tProp} ◊ ↓s' (λ s, s !!! p3 > 0).
+    ↓s {[p0:=0;p1:=0;p2:=0;p3:=0]} ⊢@{tProp} ◊ ↓s' (λ s, (∃ x, s !! p3 = Some x ∧ x > 0)%type).
   Proof.
     iIntros "Hs".
     iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
@@ -299,18 +295,14 @@ Section example.
       iEval (rewrite -ltl_next_eventually).
       do 2 iModIntro.
       iSplit.
-      - iApply (ltl_now_mono with "H'").
-        intros [[]|]=> /= H; simplify_eq; eauto.
+      - iApply (ltl_now_mono_state with "H'").
+        intros s <-.
         intros p Hp. repeat (destruct p; try set_solver).
-        replace ({[p0:=n0 + 1; p1:=n1; p2:=n2; p3:=n3]} !!! p0) with
-          (n0 + 1) by set_solver.
-        lia.
-      - iApply (ltl_now_mono with "H'").
-        intros [[]|]=> /= H; simplify_eq; eauto.
+        eexists _. split; [set_solver|lia].
+      - iApply (ltl_now_mono_state with "H'").
+        intros s <-.
         intros p Hp. repeat (destruct p; try set_solver).
-        replace ({[p0:=n0 + 1; p1:=n1; p2:=n2; p3:=n3]} !!! p0) with
-          (n0 + 1) by set_solver.
-        lia.
+        eexists _. split; [set_solver|lia].
     }
     rewrite ltl_eventually_and.
     iDestruct "H" as "[Ht1 Ht2]".
@@ -326,8 +318,8 @@ Section example.
         iDestruct (t1_fire with "Ht1' Hs") as "Ht1'".
         iEval (rewrite -ltl_next_eventually).
         do 2 iModIntro.
-        iApply (ltl_now_mono with "Ht1'").
-        intros [[]|]=> /= Hneq; eauto. rewrite -Hneq.
+        iApply (ltl_now_mono_state with "Ht1'").
+        intros s <-.
         assert (({[p0:=n0 - 1; p1:=n1 + 1; p2:=n2; p3:=n3]}: gmap place nat) !!! p1 = n1 + 1) by set_solver.
         rewrite H. lia.
       }
@@ -340,34 +332,34 @@ Section example.
         iDestruct "Hs" as (????) "Hs".
         destruct n1.
         { iCombine "Hn1 Hs" as "Hs".
-          iDestruct (ltl_now_pure with "Hs") as %[[[]|] [Hs1 Hs2]]; [|done].
-          simpl in *. simplify_eq.
+          iDestruct (ltl_now_pure with "Hs") as %[[[]|] H]; [|done].
+          simpl in *. 
+          destruct H as [H1 H2].
+          simplify_eq.
           assert (({[p0:=n0; p1:=0; p2:=n2; p3:=n3]} : gmap place nat) !!! p1 = 0) by set_solver.
-          rewrite H in Hs1. lia.
+          rewrite H in H1. lia.
         }
         iDestruct (t2_fire with "Ht2'' Hs") as "Hs".
         iEval (rewrite -ltl_next_eventually).
         do 2 iModIntro.
-        iApply (ltl_now_mono with "Hs").
-        intros [[]|]=> /= Heq; try naive_solver.
-        destruct Heq as [H1 H2].
+        iApply (ltl_now_mono_state with "Hs").
+        intros s <-.
         subst. intros p Hp.
         repeat (destruct p; try set_solver).
-        - assert (({[p0:=n0 - 1; p1:=Datatypes.S n1; p2:=n2 + 1; p3:=n3]}: gmap place nat) !!! p1 = Datatypes.S n1) as Heq by set_solver. rewrite Heq.
-          lia.
-        - assert (({[p0:=n0 - 1; p1:=Datatypes.S n1; p2:=n2 + 1; p3:=n3]}: gmap place nat) !!! p2 = n2 + 1) as Heq by set_solver. rewrite Heq.
-          lia.
+        - eexists _. split; [set_solver|lia].
+        - eexists _. split; [set_solver|lia].
       }
       iDestruct "H" as "[H1 H2]".
       iDestruct "Hs" as (????) "Hs".
       destruct n2; last first.
       { iModIntro.
+        (* TODO: Make a proper combine instance for ltl_now_state *)
         iCombine "Hs Hn1" as "Hs".
         iApply (ltl_now_mono with "Hs").
-        intros [[]|]=> /=; intros [H1 H2]; simplify_eq; eauto.
+        intros [[]|]=> /=; intros H; simplify_eq; eauto.
+        destruct H as [H1 H2]. simplify_eq.
         intros p Hp. destruct p; try set_solver.
-        assert (({[p0:=n0; p1:=n1; p2:=Datatypes.S n2; p3:=n3]} : gmap place nat) !!! p2 = Datatypes.S n2) by set_solver.
-        rewrite H. lia.
+        eexists _. split; [set_solver|lia].
       }
       iEval (rewrite -ltl_next_eventually).
       (* TODO: add destruct typeclass for next *)
@@ -379,7 +371,8 @@ Section example.
         destruct n1.
         {
           iCombine "Hs' Hn1" as "Hs'".
-          iDestruct (ltl_now_pure with "Hs'") as %[[[]|] [H1 H2]]; simpl in *; try done.
+          iDestruct (ltl_now_pure with "Hs'") as %[[[]|] H]; simpl in *; try done.
+          destruct H as [H1 H2].
           subst.
           assert (({[p0:=n0; p1:=0; p2:=0; p3:=n3]} : gmap place nat) !!! p1 = 0) by set_solver.
           rewrite H in H2. lia.
@@ -387,20 +380,20 @@ Section example.
         destruct l.
         - iDestruct (t0_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
-          iApply (ltl_now_mono with "Hs'").
-          intros [[]|]=> /= Heq; try naive_solver. subst.
+          iApply (ltl_now_mono_state with "Hs'").
+          intros s <-.
           assert (({[p0:=n0 + 1; p1:=Datatypes.S n1; p2:=0; p3:=n3]} : gmap place nat) !!! p1 = Datatypes.S n1) as Heq by set_solver. rewrite Heq.
           lia.
         - iDestruct (t1_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
-          iApply (ltl_now_mono with "Hs'").
-          intros [[]|]=> /= Heq; try naive_solver. subst.
+          iApply (ltl_now_mono_state with "Hs'").
+          intros s <-.
           assert (({[p0:=n0 - 1; p1:=Datatypes.S (n1 + 1); p2:=0; p3:=n3]} : gmap place nat) !!! p1 = Datatypes.S (n1 + 1)) as Heq by set_solver. rewrite Heq.
           lia.
         - iDestruct (t2_fire with "Hl Hs'") as "Hs'".
           iModIntro. iLeft.
-          iApply (ltl_now_mono with "Hs'").
-          intros [[]|]=> /= Heq; try naive_solver. subst.
+          iApply (ltl_now_mono_state with "Hs'").
+          intros s <-.
           assert (({[p0:=n0 - 1; p1:=Datatypes.S n1; p2:=1; p3:=n3]} : gmap place nat) !!! p1 = Datatypes.S n1) as Heq by set_solver. rewrite Heq.
           lia.
         - iDestruct (trace_steps_label with "[$Hs' $Hl]") as (s'' HR) "H".
@@ -410,8 +403,9 @@ Section example.
           assert ((p2, t3) ∈ input_arcs) by set_solver.
           specialize (H p2 H3).
           clear H0 H1 H2 H3.
-          assert (({[p0:=n0; p1:=Datatypes.S n1; p2:=0; p3:=n3]} : gmap place nat) !!! p2 = 0) by set_solver.
-          rewrite H0 in H. lia.
+          destruct H as (x&HSome&Hx).
+          assert (({[p0:=n0; p1:=Datatypes.S n1; p2:=0; p3:=n3]} : gmap place nat) !! p2 = Some 0) by set_solver.
+          rewrite H in HSome. simplify_eq. lia.
       }
       iModIntro.
       iDestruct "H" as "[H'|H']".
@@ -424,11 +418,9 @@ Section example.
     iDestruct (t3_fire with "Ht3' Hs") as "Hs".
     iEval (rewrite -ltl_next_eventually).
     do 2 iModIntro.
-    iApply (ltl_now_mono with "Hs").
-    intros [[]|]=> /= Hneq; eauto. subst.
-    replace ({[p0:=n0; p1:=n1 - 1; p2:=n2 - 1; p3:=n3 + 1]} !!! p3) with
-      (n3 + 1) by set_solver.
-    lia.
+    iApply (ltl_now_mono_state with "Hs").
+    intros s <-.
+    eexists _. split ; [set_solver|lia].
   Qed.
 
 End example.

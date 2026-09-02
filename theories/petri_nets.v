@@ -17,7 +17,7 @@ Section petri_nets.
     (∀ p, (p,t) ∈ input_arcs → s !!! p > 0).
 
   Inductive R : S → L → S → Prop :=
-  | foo s1 s2 t :
+  | fire s1 s2 t :
       enabled t s1 →
       (∀ p, (p,t) ∉ input_arcs → (t,p) ∉ output_arcs → s2 !! p = s1 !! p) →
       (∀ p x, (p,t) ∈ input_arcs → s1 !! p = Some x → s2 !! p = Some (x - 1)) →
@@ -103,7 +103,7 @@ Section example.
   Lemma always_reducible s :
     reducible (R input_arcs output_arcs) s.
   Proof.
-    eexists _, _. apply (foo _ _ _ _ _ (<[p0 := (s : gmap place nat) !!! p0 + 1]>s) t0).
+    eexists _, _. apply (fire _ _ _ _ _ (<[p0 := (s : gmap place nat) !!! p0 + 1]>s) t0).
     - intros p Hp. destruct p; set_solver.
     - intros. destruct p; [set_solver|..]; by rewrite lookup_insert_ne.
     - intros. destruct p; set_solver.
@@ -251,7 +251,7 @@ Section example.
       iModIntro. iFrame.
   Qed.
 
-  Lemma petri_live :
+  Lemma petri_inf :
     ↓s {[p0:=0;p1:=0;p2:=0;p3:=0]} ⊢@{tProp} ∞.
   Proof.
     iIntros "Hs".
@@ -272,12 +272,12 @@ Section example.
     done.
   Qed.
 
-  Theorem bar :
+  Theorem petri_live :
     ↓s {[p0:=0;p1:=0;p2:=0;p3:=0]} ⊢@{tProp} ◊ ↓s' (λ s, s !!! p3 > 0).
   Proof.
     iIntros "Hs".
     iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
-    iDestruct (petri_live with "Hs'") as "Hinf".
+    iDestruct (petri_inf with "Hs'") as "Hinf".
     iRevert "Hs".
     iDestruct (t0_enabled with "Hinf") as "#Ht0".
     iDestruct (fair with "[]") as "Ht0'".

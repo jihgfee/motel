@@ -61,11 +61,11 @@
     "stdpp-dev-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1786277153,
-        "narHash": "sha256-te1ny9RhG/4FiKbOcwEM+ijWj7Y+Lwgh259gyh+Mt7c=",
+        "lastModified": 1781340133,
+        "narHash": "sha256-avyhScUfoY65H6bMa4WK2bL4VGnPfVAuab0hqP4AG/I=",
         "ref": "refs/heads/master",
-        "rev": "9c7afbb6fa3f1df9e05fb44e73d3a103a209dd38",
-        "revCount": 3250,
+        "rev": "22033707c106f1e584640ec828e77fe4c13a9cd3",
+        "revCount": 3205,
         "type": "git",
         "url": "https://git@gitlab.mpi-sws.org/iris/stdpp"
       },

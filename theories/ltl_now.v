@@ -175,6 +175,35 @@ Section ltl_now_state_label_lemmas.
     exfalso. apply Hsteps. eexists _, _. apply H3.
   Qed.
 
+  (** Why [trace_steps_rel] needs a binary predicate rather than [↓fs' id ϕ].
+
+      [↓s' ϕ] unfolds to [↓fs' id ϕ]: apply the identity to the trace-head
+      state, then check the unary predicate [ϕ].  A simpler "fixed-predicate"
+      step lemma would carry the *same* [ϕ] through the step:
+
+        ↓s' ϕ  ⊢  ∃ l s', ⌜Rel s l s'⌝ ∧ ↓l l ∧ ○ ↓s' ϕ    (★)
+
+      Applying (★) with [ϕ := P s] for a binary [P] and the *current* abstract
+      state [s] yields [○ ↓s' (P s)] — the predicate [P s] carried unchanged
+      into the next step.  But the correct postcondition is [○ ↓s' (P s')] for
+      the abstract *next* state [s'] produced by [Rel s l s'].  The section
+      below makes this concrete: *)
+
+  Section why_binary_pred.
+    Variables (P : S → S → Prop) (s s' s1 : S) (l : L).
+    Hypothesis Hstep  : Rel s l s'.
+    Hypothesis Hgiven : P s s1.   (* what (★) would deliver: P s carried through *)
+
+    Goal P s' s1.                  (* what the caller actually needs: P s' *)
+    Proof.
+      (* There is no path from Hgiven to this goal.
+         P s s1 relates s1 to the *current* abstract state s;
+         P s' s1 relates s1 to the *next* abstract state s'.
+         Bridging them requires s = s', i.e. Rel does not advance s — which
+         defeats the purpose of the step lemma. *)
+    Abort.
+  End why_binary_pred.
+
   (** [trace_steps_rel]: generalisation of [trace_steps] that carries a binary
       predicate [P] on states through the step.
 

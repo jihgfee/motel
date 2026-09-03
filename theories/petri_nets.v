@@ -21,6 +21,21 @@ Section petri_nets.
       (∀ p x, (t,p) ∈ output_arcs → s1 !! p = Some x → s2 !! p = Some (x + 1)) →
       R s1 t s2.
 
+  Notation tProp := (tProp (gmap place nat) (transition) R).
+
+  Lemma petri_lbl_enabled t : ↓l t ⊢ ↓s' (enabled t) : tProp.
+  Proof.
+    iIntros "Hl".
+    iDestruct (ltl_dup with "Hl") as "[Hl Hl']".
+    iDestruct (ltl_st with "Hl'") as (s) "Hs".
+    { intros [[]|]; eauto. naive_solver. }
+    iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
+    iDestruct (trace_steps_label with "[$Hs' $Hl]") as (s' Hrel) "_".
+    inversion Hrel.
+    iApply (ltl_now_mono_state with "Hs").
+    intros s'' <-. simplify_eq. naive_solver.
+  Qed.
+
 End petri_nets.
 
 Arguments R {_ _ _ _ _ _} _ _ _.
@@ -131,7 +146,6 @@ Section example.
   Proof.
     iIntros "Hl Hs".
     iDestruct (trace_steps_label with "[$Hs $Hl]") as (s' HRel) "H".
-    { apply always_reducible. }
     iModIntro. inversion HRel.
     simplify_eq.
     iApply (ltl_now_mono_state with "H").
@@ -156,7 +170,6 @@ Section example.
   Proof.
     iIntros "Hl Hs".
     iDestruct (trace_steps_label with "[$Hs $Hl]") as (s' HRel) "H".
-    { apply always_reducible. }
     iModIntro. inversion HRel.
     simplify_eq.
     iApply (ltl_now_mono_state with "H").
@@ -180,7 +193,6 @@ Section example.
   Proof.
     iIntros "Hl Hs".
     iDestruct (trace_steps_label with "[$Hs $Hl]") as (s' HRel) "H".
-    { apply always_reducible. }
     iModIntro. inversion HRel.
     simplify_eq.
     iApply (ltl_now_mono_state with "H").
@@ -204,7 +216,6 @@ Section example.
   Proof.
     iIntros "Hl Hs".
     iDestruct (trace_steps_label with "[$Hs $Hl]") as (s' HRel) "H".
-    { apply always_reducible. }
     iModIntro. inversion HRel.
     simplify_eq.
     iApply (ltl_now_mono_state with "H").
@@ -333,7 +344,7 @@ Section example.
         destruct n1.
         { iCombine "Hn1 Hs" as "Hs".
           iDestruct (ltl_now_pure with "Hs") as %[[[]|] H]; [|done].
-          simpl in *. 
+          simpl in *.
           destruct H as [H1 H2].
           simplify_eq.
           destruct H1 as (x&HSome&Hx).
@@ -365,8 +376,7 @@ Section example.
       iAssert (○ ((↓s' λ s : gmap place nat, (∃ x, s !! p1 = Some x ∧ x > 0)%type) ∨
                  (↓s' enabled input_arcs t3)))%I with "[Hs Hn1]" as "H".
       { iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
-        iDestruct (trace_steps with "Hs") as (l s' _) "[Hl Hs]".
-        { apply always_reducible. }
+        iDestruct (petri_st_lbl with "Hs") as (l) "Hl".
         destruct n1.
         {
           iCombine "Hs' Hn1" as "Hs'".
@@ -392,14 +402,15 @@ Section example.
           iApply (ltl_now_mono_state with "Hs'").
           intros s <-.
           eexists _. simplify_map_eq. split; [done|lia].
-        - iDestruct (trace_steps_label with "[$Hs' $Hl]") as (s'' HR) "H".
-          { apply always_reducible. }
-          inversion HR.
-          simplify_eq.
+        -
+          iDestruct (petri_lbl_enabled with "Hl") as "Hs".
+          iCombine "Hs Hs'" as "Hs".
+          iDestruct (ltl_now_pure with "Hs") as %[[[]|] H]; [|done].
+          simpl in *.
+          destruct H as [H1 H2].
           assert ((p2, t3) ∈ input_arcs) by set_solver.
-          specialize (H p2 H3).
-          clear H0 H1 H2 H3.
-          destruct H as (x&HSome&Hx).
+          specialize (H1 p2 H).
+          destruct H1 as (x&HSome&Hx).
           simplify_map_eq. lia.
       }
       iModIntro.

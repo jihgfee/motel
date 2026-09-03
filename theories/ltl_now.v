@@ -49,6 +49,15 @@ Section ltl_now_axioms.
     ¬ ↓ P ⊢ ↓ (λ osl, ¬ (P osl) : Prop) : tProp.
   Proof. rewrite ltl_now_unseal. unseal. done. Qed.
 
+  Lemma ltl_now_pure_strong (P : option (S * option L) → Prop) :
+    ↓ P ⊢ ∃ (tr : wf_trace S L Rel), ⌜P (wf_head tr)⌝ : tProp.
+  Proof.
+    rewrite ltl_now_unseal. unseal.
+    constructor.
+    intros. simplify_eq; eexists tr; eauto.
+  Qed.
+
+  (* TODO: derive *)
   Lemma ltl_now_pure (P : option (S * option L) → Prop) :
     ↓ P ⊢ ∃ osl, ⌜P osl⌝ : tProp.
   Proof.
@@ -298,12 +307,17 @@ Section ltl_now_state_label_lemmas.
   Qed.
 
   Lemma trace_steps_label s l :
-    reducible Rel s →
     ↓s s ∧ ↓l l ⊢ ∃ (s':S), ⌜Rel s l s'⌝ ∧ ○ ↓s s' : tProp.
   Proof.
-    iIntros (Hred) "[Hs Hl]".
-    iDestruct (trace_steps with "Hs") as (l' s' HRel') "[Hl' Hs']"; [done|].
-    iDestruct (ltl_now_lbl_agree with "Hl Hl'") as %->. iExists _. iFrame. done.
+    iIntros "[Hs Hl]".
+    iCombine "Hs Hl" as "Hsl".
+    iDestruct (ltl_now_pure_strong with "Hsl") as %[x H].
+    iDestruct "Hsl" as "[Hs Hl]".
+    iDestruct (trace_steps with "Hs") as (l' s' Hrel) "[Hl' Hs']".
+    { destruct x. inversion tr_wf; simplify_eq; try naive_solver.
+      inversion H2; eexists _, _; try naive_solver. }
+    iDestruct (ltl_now_lbl_agree with "Hl Hl'") as %->.
+    iExists s'. iFrame. iPureIntro. done.
   Qed.
 
   Lemma trace_steps_label_det s l s' :
@@ -312,8 +326,7 @@ Section ltl_now_state_label_lemmas.
     ↓s s ∧ ↓l l ⊢ ○ ↓s s' : tProp.
   Proof.
     iIntros (Hdet Hred) "[Hs Hl]".
-    iDestruct (trace_steps_label with "[$Hs $Hl]") as (s'' HRel') "Hs'";
-      [by eexists _, _|].
+    iDestruct (trace_steps_label with "[$Hs $Hl]") as (s'' HRel') "Hs'".
     specialize (Hdet _ _ _ _ Hred HRel'). subst. done.
   Qed.
 

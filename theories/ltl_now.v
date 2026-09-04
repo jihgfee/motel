@@ -86,15 +86,7 @@ Section ltl_now_axioms.
     intros. simplify_eq; eexists tr; eauto.
   Qed.
 
-  (* TODO: derive *)
-  Lemma ltl_now_pure (P : option (S * option L) → Prop) :
-    ↓ P ⊢ ∃ osl, ⌜P osl⌝ : tProp.
-  Proof.
-    rewrite ltl_now_unseal. unseal.
-    constructor.
-    intros. simplify_eq; eexists _; eauto.
-  Qed.
-
+  (* TODO: Is this a good axiom? *)
   Lemma trace_steps_strong (P Q : tProp) :
     (∀ (tr : wf_trace S L Rel), P tr → Q (wf_tail tr)) →
     P ⊢@{tProp} ○ Q : tProp.
@@ -165,6 +157,12 @@ Section ltl_now_lemmas.
   Global Instance into_sep_now (ϕ ψ : option (S * option L) → Prop) :
     IntoSep (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp) (↓ ϕ) (↓ ψ).
   Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_and. Qed.
+
+  Lemma ltl_now_pure (P : option (S * option L) → Prop) :
+    ↓ P ⊢ ∃ osl, ⌜P osl⌝ : tProp.
+  Proof.
+    iIntros "H". iDestruct (ltl_now_pure_strong with "H") as %[tr Htr]. eauto.
+  Qed.
 
   Lemma ltl_now_false (P Q : option (S *option L) → Prop) :
     (∀ osl, P osl → Q osl → False) → (↓ P:tProp) -∗ ↓ Q -∗ False.

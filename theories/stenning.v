@@ -160,7 +160,6 @@ Section stenning_ex.
     iDestruct (ltl_now_label_prod_fst with "HA") as (l) "HA".
     iDestruct (ltl_dup with "HA") as "[HA HA']".
     iDestruct (trace_steps_label with "[Hs HA]") as  (s' Hsteps') "Hs'".
-    { eexists _,_. econstructor. }
     { iFrame. }
     inversion Hsteps'; simplify_eq.
     iFrame. iModIntro.
@@ -179,7 +178,6 @@ Section stenning_ex.
     iDestruct (ltl_now_label_prod_fst with "HA") as (l) "HA".
     iDestruct (ltl_dup with "HA") as "[HA HA']".
     iDestruct (trace_steps_label with "[$Hs $HA]") as  (s' Hsteps') "Hs'".
-    { eexists (_,Recv _ None),_. econstructor. eauto. }
     inversion Hsteps'; simplify_eq.
     - iExists omsg. iLeft. iFrame. iSplit; [eauto|]. iModIntro.
       iApply ltl_now_prod_fst. iExists _. iFrame.
@@ -195,7 +193,6 @@ Section stenning_ex.
     iDestruct (ltl_now_label_prod_fst with "HA") as (l) "HA".
     iDestruct (ltl_dup with "HA") as "[HA HA']".
     iDestruct (trace_steps_label with "[$Hs $HA]") as  (s' Hsteps') "Hs'".
-    { apply stenning_reducible. }
     inversion Hsteps'; simplify_eq;
       iModIntro; iApply ltl_now_prod_fst; iExists _; iFrame.
   Qed.
@@ -212,7 +209,6 @@ Section stenning_ex.
     iDestruct (ltl_now_label_prod_fst with "Hl") as (l) "Hl".
     iDestruct (ltl_dup with "Hl") as "[Hl Hl']".
     iDestruct (trace_steps_label with "[$Hs $Hl]") as  (s' Hsteps') "Hs'".
-    { apply stenning_reducible. }
     inversion Hsteps'; simplify_eq.
     - iExists None. iLeft. iFrame. iSplit; [eauto|]. iModIntro.
       iApply ltl_now_prod_snd. iExists _. iFrame.
@@ -230,7 +226,6 @@ Section stenning_ex.
     iDestruct (ltl_now_label_prod_fst with "Hl") as (l) "Hl".
     iDestruct (ltl_dup with "Hl") as "[Hl Hl']".
     iDestruct (trace_steps_label with "[$Hs $Hl]") as  (s' Hsteps') "Hs'".
-    { apply stenning_reducible. }
     inversion Hsteps'; simplify_eq.
     iFrame. iModIntro. iApply ltl_now_prod_snd. iExists _. iFrame.
   Qed.
@@ -243,7 +238,6 @@ Section stenning_ex.
     iDestruct (ltl_now_label_prod_fst with "Hl") as (l) "Hl".
     iDestruct (ltl_dup with "Hl") as "[Hl Hl']".
     iDestruct (trace_steps_label with "[$Hs $Hl]") as  (s' Hsteps') "Hs'".
-    { apply stenning_reducible. }
     inversion Hsteps'; simplify_eq;
       iModIntro; iApply ltl_now_prod_snd; iExists _; iFrame.
   Qed.

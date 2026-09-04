@@ -438,8 +438,7 @@ Section yes_no_ex.
     ↓s (S i,b) ∧ ↓l b ⊢  ○ ↓s (S i - 1, negb b): tProp.
   Proof.
     iIntros "[Hs Hl]".
-    iDestruct (trace_steps_label with "[$Hs $Hl]") as (s' Hsteps') "Hs";
-      [by eexists _, _; constructor; lia|].
+    iDestruct (trace_steps_label with "[$Hs $Hl]") as (s' Hsteps') "Hs".
     inversion Hsteps'; simplify_eq.
     - done.
     - by destruct b.

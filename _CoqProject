@@ -26,3 +26,4 @@ theories/ltl_adequacy.v
 theories/classical.v
 theories/examples.v
 theories/stenning.v
+theories/petri_nets.v

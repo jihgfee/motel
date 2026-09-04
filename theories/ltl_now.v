@@ -23,6 +23,28 @@ End ltl_primitives.
 Global Instance: Params (@ltl_now) 2 := {}.
 Notation "↓ P" := (ltl_now P) (at level 20, right associativity) : bi_scope.
 
+Section ltl_now_termination.
+  Context {S L : Type}.
+  Context {Rel : S → L → S → Prop}.
+
+  Notation tProp := (tProp S L Rel).
+
+  Definition ltl_terminated : tProp :=
+    ↓ (λ osl, osl = None).
+
+  Definition ltl_infinite : tProp :=
+    □ (¬ ltl_terminated).
+
+End ltl_now_termination.
+
+Arguments ltl_terminated {_ _ _} : simpl never.
+
+Notation "↯" := (ltl_terminated) (at level 0) : bi_scope.
+Notation "∞" := (ltl_infinite) (at level 0) : bi_scope.
+
+Definition reducible {S L} Rel (s : S) :=
+  ∃ (l:L) (s':S), Rel s l s'.
+
 Section ltl_now_axioms.
   Context {S L : Type}.
   Context {Rel : S → L → S → Prop}.
@@ -71,6 +93,16 @@ Section ltl_now_axioms.
     rewrite ltl_now_unseal. unseal.
     constructor.
     intros. simplify_eq; eexists _; eauto.
+  Qed.
+
+  Lemma trace_steps_strong (P Q : tProp) :
+    (∀ (tr : wf_trace S L Rel), P tr → Q (wf_tail tr)) →
+    P ⊢@{tProp} ○ Q : tProp.
+  Proof.
+    intros HPQ.
+    constructor=> tr. rewrite ltl_next_unseal.
+    intros HP.
+    apply HPQ in HP. apply HP.
   Qed.
 
 End ltl_now_axioms.
@@ -155,35 +187,29 @@ Notation "↓fl f x" := (↓fl' f (eq x))%I (at level 20, f at level 8, x at lev
 Notation "↓l' ϕ" := (↓fl' id ϕ)%I (at level 20, right associativity) : bi_scope.
 Notation "↓l x" := (↓fl id x)%I (at level 20, right associativity) : bi_scope.
 
-Section ltl_now_termination.
-  Context {S L : Type}.
-  Context {Rel : S → L → S → Prop}.
-
-  Notation tProp := (tProp S L Rel).
-
-  Definition ltl_terminated : tProp :=
-    ↓ (λ osl, osl = None).
-
-  Definition ltl_infinite : tProp :=
-    □ (¬ ltl_terminated).
-
-End ltl_now_termination.
-
-Arguments ltl_terminated {_ _ _} : simpl never.
-
-Notation "↯" := (ltl_terminated) (at level 0) : bi_scope.
-Notation "∞" := (ltl_infinite) (at level 0) : bi_scope.
-
-Inductive empty : SProp := .
-
-Definition reducible {S L} Rel (s : S) :=
-  ∃ (l:L) (s':S), Rel s l s'.
-
 Section ltl_now_state_label_lemmas.
   Context {S L : Type}.
   Context {Rel : S → L → S → Prop}.
 
   Notation tProp := (tProp S L Rel).
+
+  (* TODO: Generalize this and move to axioms, before [↓s] is defined *)
+  Lemma trace_terminates s :
+    ¬ (reducible Rel s) → ↓s s ⊢ ○ ↯ : tProp.
+  Proof.
+    intros Hsteps.
+    constructor.
+    intros [[tr|] tr_wf]; last first.
+    { rewrite ltl_now_unseal.
+      intros Hnow. inversion Hnow. }
+    rewrite /ltl_terminated ltl_now_unseal ltl_next_unseal.
+    intros Hnow.
+    destruct tr as [|]; inversion Hnow; simpl in *; simplify_eq.
+    { rewrite /ltl_next_def. rewrite /wf_tail. constructor. }
+    rewrite /ltl_next_def. rewrite /wf_tail.
+    exfalso. inversion tr_wf. simplify_eq. simpl in *. simplify_eq.
+    exfalso. apply Hsteps. eexists _, _. apply H3.
+  Qed.
 
   Lemma ltl_now_mono_state (ϕ ψ : S → Prop) :
     (∀ s, ϕ s → ψ s) → ⊢@{tProp} ↓s' ϕ → ↓s' ψ.
@@ -245,33 +271,6 @@ Section ltl_now_state_label_lemmas.
     simpl.
     iApply (ltl_now_mono with "Hxy").
     intros [[? []]|]=> /=; try by naive_solver.
-  Qed.
-
-  Lemma trace_terminates s :
-    ¬ (reducible Rel s) → ↓s s ⊢ ○ ↯ : tProp.
-  Proof.
-    intros Hsteps.
-    constructor.
-    intros [[tr|] tr_wf]; last first.
-    { rewrite ltl_now_unseal.
-      intros Hnow. inversion Hnow. }
-    rewrite /ltl_terminated ltl_now_unseal ltl_next_unseal.
-    intros Hnow.
-    destruct tr as [|]; inversion Hnow; simpl in *; simplify_eq.
-    { rewrite /ltl_next_def. rewrite /wf_tail. constructor. }
-    rewrite /ltl_next_def. rewrite /wf_tail.
-    exfalso. apply empty_ind. inversion tr_wf. simplify_eq. simpl in *. simplify_eq.
-    exfalso. apply Hsteps. eexists _, _. apply H3.
-  Qed.
-
-  Lemma trace_steps_strong (P Q : tProp) :
-    (∀ (tr : wf_trace S L Rel), P tr → Q (wf_tail tr)) →
-    P ⊢@{tProp} ○ Q : tProp.
-  Proof.
-    intros HPQ.
-    constructor=> tr. rewrite ltl_next_unseal.
-    intros HP.
-    apply HPQ in HP. apply HP.
   Qed.
 
   Lemma ltl_lbl_red P :

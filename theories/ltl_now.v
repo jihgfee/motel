@@ -257,41 +257,102 @@ Section ltl_now_state_label_lemmas.
     exfalso. apply Hsteps. eexists _, _. apply H3.
   Qed.
 
-  Lemma trace_steps (s:S) :
-    reducible Rel s →
-    ↓s s ⊢ ∃ (l:L) (s':S), ⌜Rel s l s'⌝ ∧ ↓l l ∧ ○ ↓s s' : tProp.
+  (** Why [trace_steps_rel] needs a binary predicate rather than [↓fs' id ϕ].
+
+      [↓s' ϕ] unfolds to [↓fs' id ϕ]: apply the identity to the trace-head
+      state, then check the unary predicate [ϕ].  A simpler "fixed-predicate"
+      step lemma would carry the *same* [ϕ] through the step:
+
+        ↓s' ϕ  ⊢  ∃ l s1', ⌜Rel s1 l s1'⌝ ∧ ↓l l ∧ ○ ↓s' ϕ    (★)
+
+      Applying (★) with [ϕ := ψ s1] for a binary [ψ] and the *current*
+      abstract state [s1] yields [○ ↓s' (ψ s1)] — the predicate [ψ s1]
+      carried unchanged into the next step.  But the correct postcondition is
+      [○ ↓s' (ψ s1')] for the abstract *next* state [s1'] produced by
+      [Rel s1 l s1'].  The section below makes this concrete: *)
+
+  Section why_binary_pred.
+    Variables (ψ : S → S → Prop) (s1 s1' s2 : S) (l : L).
+    Hypothesis Hstep  : Rel s1 l s1'.
+    Hypothesis Hgiven : ψ s1 s2.   (* what (★) would deliver: ψ s1 carried through *)
+
+    Goal ψ s1' s2.                  (* what the caller actually needs: ψ s1' *)
+    Proof.
+      (* There is no path from Hgiven to this goal.
+         ψ s1 s2 relates s2 to the *current* abstract state s1;
+         ψ s1' s2 relates s2 to the *next* abstract state s1'.
+         Bridging them requires s1 = s1', i.e. Rel does not advance s1 — which
+         defeats the purpose of the step lemma. *)
+    Abort.
+  End why_binary_pred.
+
+  (** [trace_steps_rel]: generalisation of [trace_steps] that carries a binary
+      predicate [ϕ] on states through the step.
+
+      The two hypotheses are needed because [↓s' (ϕ s1)] only pins a *relation*
+      between the abstract state [s1] and the current trace head [s2], not [s2]
+      itself:
+
+      - [Hback]: every [s2] related to [s1] by [ϕ] is reducible, so singleton
+        traces (where [s2] has no outgoing step) are ruled out.
+      - [Hfwd]: [ϕ] is a forward simulation — if [ϕ s1 s2] and
+        [Rel s2 l s2'], then there exists [s1'] such that [Rel s1 l s1'] and
+        [ϕ s1' s2'].  This lets us "lift" the trace's actual step
+        ([s2 → s2']) to a step from [s1] ([s1 → s1']), while preserving [ϕ]
+        on the successor states. *)
+  Lemma trace_steps_rel (ϕ : S → S → Prop) (s1 : S) :
+    (∀ s2, ϕ s1 s2 → reducible Rel s2) →
+    (∀ s2 l s2', ϕ s1 s2 → Rel s2 l s2' → ∃ s1', Rel s1 l s1' ∧ ϕ s1' s2') →
+    ↓s' (ϕ s1) ⊢ ∃ (l:L) (s1':S), ⌜Rel s1 l s1'⌝ ∧ ↓l l ∧ ○ ↓s' (ϕ s1') : tProp.
   Proof.
-    intros (l&s'&Hsteps).
+    intros Hback Hfwd.
     constructor.
     intros [[tr|] tr_wf]; last first.
     { unseal.
       rewrite ltl_now_unseal.
       intros Hnow. inversion Hnow. }
-    unseal. 
+    unseal.
     rewrite ltl_now_unseal.
     intros Hnow.
-    destruct tr as [|]; inversion Hnow; simpl in *; simplify_eq.
-    { exfalso. apply empty_ind. inversion tr_wf. subst. specialize (H0 l s'). done. }
-    clear Hsteps.
-    assert (∃ c', fst <$> head_trace (Some tr) = Some c' ∧ Rel s0 ℓ c') as Hwf.
-    { destruct tr.
-      { exists s. split; [done|].
-        inversion tr_wf. simplify_eq.
-        simpl in *. simplify_eq. done. }
-      exists s. split; [done|].
-      inversion tr_wf. simplify_eq.
-      simpl in *. simplify_eq. done. }
-    destruct Hwf as (s''&Hhead&Hrel).
-    destruct tr; simpl in *; simplify_eq.
-    - eexists ℓ, s''. econstructor; [done|].
-      econstructor.
-      + by econstructor.
-      + rewrite ltl_next_unseal. econstructor. 
-    - eexists ℓ, s''. econstructor; [done|].
-      econstructor.
-      + by econstructor.
-      + rewrite ltl_next_unseal. econstructor.
-        Unshelve. all: by inversion tr_wf.
+    destruct tr as [s2 | s2 ℓ tr'].
+    - (* Singleton trace: s2 is a dead-end, but Hback gives reducibility — contradiction. *)
+      simpl in Hnow.
+      destruct (Hback s2 Hnow) as (l0 & s2' & Hrel0).
+      exfalso.
+      inversion tr_wf; subst.
+      exact (H0 l0 s2' Hrel0).
+    - (* Cons trace: extract the actual step s2 -[ℓ]-> s_next from trace well-formedness. *)
+      simpl in Hnow.
+      assert (∃ s_next, fst <$> head_trace (Some tr') = Some s_next ∧ Rel s2 ℓ s_next) as Hwf.
+      { destruct tr'.
+        { eexists. split; [done|].
+          inversion tr_wf. simplify_eq. simpl in *. simplify_eq. done. }
+        eexists. split; [done|].
+        inversion tr_wf. simplify_eq. simpl in *. simplify_eq. done. }
+      destruct Hwf as (s_next & Hhead & Hrel0).
+      (* Forward simulation: Rel s2 ℓ s_next + ϕ s1 s2 → ∃ s1', Rel s1 ℓ s1' ∧ ϕ s1' s_next *)
+      destruct (Hfwd s2 ℓ s_next Hnow Hrel0) as (s1' & Hrel_s1 & Hϕ_next).
+      destruct tr'; simpl in *; simplify_eq;
+        rewrite /ltl_exist_def /ltl_and_def /ltl_pure_def.
+      + eexists ℓ, s1'. split; [exact Hrel_s1|].
+        split.
+        * by econstructor.
+        * rewrite ltl_next_unseal. exact Hϕ_next.
+      + eexists ℓ, s1'. split; [exact Hrel_s1|].
+        split.
+        * by econstructor.
+        * rewrite ltl_next_unseal. exact Hϕ_next.
+          Unshelve. all: by inversion tr_wf.
+  Qed.
+
+  Lemma trace_steps (s:S) :
+    reducible Rel s →
+    ↓s s ⊢ ∃ (l:L) (s':S), ⌜Rel s l s'⌝ ∧ ↓l l ∧ ○ ↓s s' : tProp.
+  Proof.
+    intros Hred.
+    apply (trace_steps_rel eq s).
+    - intros s0 <-. exact Hred.
+    - intros s0 l s1 <- Hrel. exists s1. split; [exact Hrel | reflexivity].
   Qed.
 
   Lemma trace_steps_det (s:S) l s' :

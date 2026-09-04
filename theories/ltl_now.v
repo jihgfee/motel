@@ -37,6 +37,13 @@ Section ltl_now_axioms.
     constructor. intros. by apply HPQ.
   Qed.
 
+  Lemma ltl_now_mono_strong P Q :
+    (∀ (tr : wf_trace S L Rel), P (wf_head tr) → Q (wf_head tr)) → ↓ P ⊢ ↓ Q : tProp.
+  Proof.
+    intros HPQ. rewrite ltl_now_unseal.
+    constructor. intros. by apply HPQ.
+  Qed.
+
   Lemma ltl_now_forall {A} (P : A → tPred) :
     (∀ (x:A), ↓ (P x)) ⊣⊢@{tProp} (↓ (λ osl, (∀ x, (P x) osl))%type).
   Proof. rewrite ltl_now_unseal. unseal. done. Qed.
@@ -257,92 +264,90 @@ Section ltl_now_state_label_lemmas.
     exfalso. apply Hsteps. eexists _, _. apply H3.
   Qed.
 
-  (** Why [trace_steps_rel] needs a binary predicate rather than [↓fs' id ϕ].
+  Lemma trace_steps_strong (P Q : tProp) :
+    (∀ (tr : wf_trace S L Rel), P tr → Q (wf_tail tr)) →
+    P ⊢@{tProp} ○ Q : tProp.
+  Proof.
+    intros HPQ.
+    constructor=> tr. rewrite ltl_next_unseal.
+    intros HP.
+    apply HPQ in HP. apply HP.
+  Qed.
 
-      [↓s' ϕ] unfolds to [↓fs' id ϕ]: apply the identity to the trace-head
-      state, then check the unary predicate [ϕ].  A simpler "fixed-predicate"
-      step lemma would carry the *same* [ϕ] through the step:
+  Lemma trace_steps_now_strong (P Q : option (S * option L) → Prop) :
+    (∀ (tr : wf_trace S L Rel), P (wf_head tr) → Q (wf_head (wf_tail tr))) →
+    ↓ P ⊢@{tProp} ○ ↓ Q : tProp.
+  Proof.
+    intros HPQ. apply trace_steps_strong. intros tr. rewrite ltl_now_unseal. apply HPQ.
+  Qed.
 
-        ↓s' ϕ  ⊢  ∃ l s1', ⌜Rel s1 l s1'⌝ ∧ ↓l l ∧ ○ ↓s' ϕ    (★)
+  Lemma trace_steps_label_rel (P : S → Prop) l (Qs : S → Prop) :
+    (∀ s s', P s → Rel s l s' → Qs s') →
+    ↓s' P ∧ ↓l l ⊢@{tProp} ○ ↓s' Qs.
+  Proof.
+    iIntros (HPQ) "[Hs Hl]".
+    iCombine "Hs Hl" as "Hsl".
+    iApply (trace_steps_now_strong with "Hsl").
+    intros [[] Hwf] Heq; simpl in *; try naive_solver.
+    destruct Heq as [H1 H2].
+    destruct t; simpl in *; try naive_solver; simplify_eq.
+    eapply HPQ; [done|]. inversion Hwf; naive_solver.
+  Qed.
 
-      Applying (★) with [ϕ := ψ s1] for a binary [ψ] and the *current*
-      abstract state [s1] yields [○ ↓s' (ψ s1)] — the predicate [ψ s1]
-      carried unchanged into the next step.  But the correct postcondition is
-      [○ ↓s' (ψ s1')] for the abstract *next* state [s1'] produced by
-      [Rel s1 l s1'].  The section below makes this concrete: *)
+  Lemma trace_steps_rel (P : S → Prop) (Qs : S → Prop) :
+    (∀ s, P s → reducible Rel s) →
+    (∀ s l s', P s → Rel s l s' → Qs s') →
+    ↓s' P ⊢@{tProp} ○ ↓s' Qs.
+  Proof.
+    iIntros (Hback HPQ) "Hs".
+    iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
+    iAssert (∃ l, ↓l l)%I with "[Hs']" as (l) "Hl".
+    { rewrite ltl_now_exists. iApply (ltl_now_mono_strong with "Hs'").
+      intros [tr Hwf]. intros Hred. destruct tr; [|done]. simpl in *. subst.
+      apply Hback in Hred.
+      destruct Hred as (l&s'&Hrel).
+      inversion Hwf.
+      { subst. apply H0 in Hrel. done. }
+      simplify_eq.
+      exists l0. simpl. eauto. }
+    iApply (trace_steps_label_rel with "[$Hs $Hl]").
+    intros. by eapply HPQ.
+  Qed.
 
-  Section why_binary_pred.
-    Variables (ψ : S → S → Prop) (s1 s1' s2 : S) (l : L).
-    Hypothesis Hstep  : Rel s1 l s1'.
-    Hypothesis Hgiven : ψ s1 s2.   (* what (★) would deliver: ψ s1 carried through *)
-
-    Goal ψ s1' s2.                  (* what the caller actually needs: ψ s1' *)
-    Proof.
-      (* There is no path from Hgiven to this goal.
-         ψ s1 s2 relates s2 to the *current* abstract state s1;
-         ψ s1' s2 relates s2 to the *next* abstract state s1'.
-         Bridging them requires s1 = s1', i.e. Rel does not advance s1 — which
-         defeats the purpose of the step lemma. *)
-    Abort.
-  End why_binary_pred.
-
-  (** [trace_steps_rel]: generalisation of [trace_steps] that carries a binary
-      predicate [ϕ] on states through the step.
-
-      The two hypotheses are needed because [↓s' (ϕ s1)] only pins a *relation*
-      between the abstract state [s1] and the current trace head [s2], not [s2]
-      itself:
-
-      - [Hback]: every [s2] related to [s1] by [ϕ] is reducible, so singleton
-        traces (where [s2] has no outgoing step) are ruled out.
-      - [Hfwd]: [ϕ] is a forward simulation — if [ϕ s1 s2] and
-        [Rel s2 l s2'], then there exists [s1'] such that [Rel s1 l s1'] and
-        [ϕ s1' s2'].  This lets us "lift" the trace's actual step
-        ([s2 → s2']) to a step from [s1] ([s1 → s1']), while preserving [ϕ]
-        on the successor states. *)
-  Lemma trace_steps_rel (ϕ : S → S → Prop) (s1 : S) :
+  Lemma trace_steps_bisim (ϕ : S → S → Prop) (s1 : S) :
     (∀ s2, ϕ s1 s2 → reducible Rel s2) →
     (∀ s2 l s2', ϕ s1 s2 → Rel s2 l s2' → ∃ s1', Rel s1 l s1' ∧ ϕ s1' s2') →
     ↓s' (ϕ s1) ⊢ ∃ (l:L) (s1':S), ⌜Rel s1 l s1'⌝ ∧ ↓l l ∧ ○ ↓s' (ϕ s1') : tProp.
   Proof.
     intros Hback Hfwd.
-    constructor.
-    intros [[tr|] tr_wf]; last first.
-    { unseal.
-      rewrite ltl_now_unseal.
-      intros Hnow. inversion Hnow. }
-    unseal.
-    rewrite ltl_now_unseal.
-    intros Hnow.
-    destruct tr as [s2 | s2 ℓ tr'].
-    - (* Singleton trace: s2 is a dead-end, but Hback gives reducibility — contradiction. *)
-      simpl in Hnow.
-      destruct (Hback s2 Hnow) as (l0 & s2' & Hrel0).
-      exfalso.
-      inversion tr_wf; subst.
-      exact (H0 l0 s2' Hrel0).
-    - (* Cons trace: extract the actual step s2 -[ℓ]-> s_next from trace well-formedness. *)
-      simpl in Hnow.
-      assert (∃ s_next, fst <$> head_trace (Some tr') = Some s_next ∧ Rel s2 ℓ s_next) as Hwf.
-      { destruct tr'.
-        { eexists. split; [done|].
-          inversion tr_wf. simplify_eq. simpl in *. simplify_eq. done. }
-        eexists. split; [done|].
-        inversion tr_wf. simplify_eq. simpl in *. simplify_eq. done. }
-      destruct Hwf as (s_next & Hhead & Hrel0).
-      (* Forward simulation: Rel s2 ℓ s_next + ϕ s1 s2 → ∃ s1', Rel s1 ℓ s1' ∧ ϕ s1' s_next *)
-      destruct (Hfwd s2 ℓ s_next Hnow Hrel0) as (s1' & Hrel_s1 & Hϕ_next).
-      destruct tr'; simpl in *; simplify_eq;
-        rewrite /ltl_exist_def /ltl_and_def /ltl_pure_def.
-      + eexists ℓ, s1'. split; [exact Hrel_s1|].
-        split.
-        * by econstructor.
-        * rewrite ltl_next_unseal. exact Hϕ_next.
-      + eexists ℓ, s1'. split; [exact Hrel_s1|].
-        split.
-        * by econstructor.
-        * rewrite ltl_next_unseal. exact Hϕ_next.
-          Unshelve. all: by inversion tr_wf.
+    iIntros "Hs".
+    iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
+    iAssert (∃ l, ↓l l)%I with "[Hs']" as (l) "Hl".
+    { rewrite ltl_now_exists. iApply (ltl_now_mono_strong with "Hs'").
+      intros [tr Hwf]. intros Hred. destruct tr; [|done]. simpl in *. subst.
+      apply Hback in Hred.
+      destruct Hred as (l&s'&Hrel).
+      inversion Hwf.
+      { subst. apply H0 in Hrel. done. }
+      simplify_eq.
+      exists l0. simpl. eauto. }
+    iDestruct (ltl_dup with "Hl") as "[Hl Hl']".
+    iFrame. clear Hback.
+    iDestruct (trace_steps_label_rel _ l (λ s2', ∃ s1' : S, Rel s1 l s1' ∧ ϕ s1' s2') with "[$Hs $Hl]") as "H".
+    { intros. specialize (Hfwd _ _ _ H H0) as [x Hx]. exists x. eapply Hx. }
+    iAssert (○ ∃ s1' : S, ↓s' λ s2' : S, (Rel s1 l s1' ∧ ϕ s1' s2')%type)%I with "[H]" as "H".
+    {
+      iModIntro. rewrite ltl_now_exists. iApply (ltl_now_mono with "H").
+      intros [] H; simpl in *; simplify_eq; eauto.
+    }
+    rewrite ltl_next_exists.
+    iDestruct "H" as (x) "H". iExists x.
+    iSplit.
+    - rewrite -ltl_next_pure. iModIntro.
+      iDestruct (ltl_now_pure with "H") as ([]) "%H"; simpl in *; naive_solver.
+    - iModIntro. iApply (ltl_now_mono with "H").
+      intros [] H; simpl in *; simplify_eq; eauto.
+      naive_solver.
   Qed.
 
   Lemma trace_steps (s:S) :
@@ -350,7 +355,7 @@ Section ltl_now_state_label_lemmas.
     ↓s s ⊢ ∃ (l:L) (s':S), ⌜Rel s l s'⌝ ∧ ↓l l ∧ ○ ↓s s' : tProp.
   Proof.
     intros Hred.
-    apply (trace_steps_rel eq s).
+    apply (trace_steps_bisim eq s).
     - intros s0 <-. exact Hred.
     - intros s0 l s1 <- Hrel. exists s1. split; [exact Hrel | reflexivity].
   Qed.
@@ -468,17 +473,17 @@ Section ltl_now_state_label_lemmas.
     rewrite ltl_now_pure.
     iDestruct "H" as %([[?[]]|]&?&?); naive_solver.
   Qed.
-  
+
   Global Instance ltl_now_state_combine (ϕ ψ : S → Prop) :
     CombineSepAs (↓s' ϕ) (↓s' ψ) (↓s' (ϕ ⟨⟨and⟩⟩ ψ):tProp).
-  Proof. 
+  Proof.
     rewrite /CombineSepAs bi_sep_and.
     iIntros "[H1 H2]". iApply (ltl_now_state_and with "H1 H2").
   Qed.
 
   Global Instance ltl_now_label_combine (ϕ ψ : L → Prop) :
     CombineSepAs (↓l' ϕ) (↓l' ψ) (↓l' (ϕ ⟨⟨and⟩⟩ ψ):tProp).
-  Proof. 
+  Proof.
     rewrite /CombineSepAs bi_sep_and.
     iIntros "[H1 H2]". iApply (ltl_now_label_and with "H1 H2").
   Qed.
@@ -536,7 +541,7 @@ End ltl_now_state_prod.
 Section ltl_now_label_prod.
   Context {S L1 L2 : Type}.
   Context {Rel : S → (L1 * L2) → S → Prop}.
-  
+
   Notation tProp := (tProp S (L1 * L2) Rel).
 
   Lemma ltl_now_label_prod_and (l1 : L1) (l2 : L2) :

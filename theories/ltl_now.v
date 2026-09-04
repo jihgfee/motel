@@ -274,6 +274,35 @@ Section ltl_now_state_label_lemmas.
     apply HPQ in HP. apply HP.
   Qed.
 
+  Lemma ltl_lbl_red P :
+    (∀ osl, P osl → ∃ s ol, osl = Some (s, ol) ∧ reducible Rel s) → ↓ P ⊢ ∃ l, ↓l l : tProp.
+  Proof.
+    intros Hred. iIntros "HP".
+    iAssert (∃ l, ↓l l)%I with "[HP]" as (l) "Hl".
+    { rewrite ltl_now_exists. iApply (ltl_now_mono_strong with "HP").
+      intros [tr Hwf]. intros HP.
+      apply Hred in HP as (s&ol&Hosl&Hred').
+      destruct tr; [|done]. simpl in *. subst.
+      inversion Hwf.
+      { subst.
+        destruct Hred' as (?&?&?).
+        rewrite /wf_head in Hosl. simpl in *.
+        simplify_eq.
+        apply H0 in H. done. }
+      simplify_eq.
+      exists l. simpl. eauto. }
+    iExists l. done.
+  Qed.
+
+  Lemma ltl_lbl_state P :
+    (∀ s, P s → reducible Rel s) → ↓s' P ⊢ ∃ l, ↓l l : tProp.
+  Proof.
+    intros HP.
+    iIntros "HP".
+    iApply (ltl_lbl_red with "HP").
+    intros [[]|]=> /=; intros ?; try by eauto.
+  Qed.
+
   Lemma trace_steps_now_strong (P Q : option (S * option L) → Prop) :
     (∀ (tr : wf_trace S L Rel), P (wf_head tr) → Q (wf_head (wf_tail tr))) →
     ↓ P ⊢@{tProp} ○ ↓ Q : tProp.
@@ -301,15 +330,8 @@ Section ltl_now_state_label_lemmas.
   Proof.
     iIntros (Hback HPQ) "Hs".
     iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
-    iAssert (∃ l, ↓l l)%I with "[Hs']" as (l) "Hl".
-    { rewrite ltl_now_exists. iApply (ltl_now_mono_strong with "Hs'").
-      intros [tr Hwf]. intros Hred. destruct tr; [|done]. simpl in *. subst.
-      apply Hback in Hred.
-      destruct Hred as (l&s'&Hrel).
-      inversion Hwf.
-      { subst. apply H0 in Hrel. done. }
-      simplify_eq.
-      exists l0. simpl. eauto. }
+    iDestruct (ltl_lbl_state with "Hs'") as (l) "Hl".
+    { apply Hback. }
     iApply (trace_steps_label_rel with "[$Hs $Hl]").
     intros. by eapply HPQ.
   Qed.
@@ -322,15 +344,8 @@ Section ltl_now_state_label_lemmas.
     intros Hback Hfwd.
     iIntros "Hs".
     iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
-    iAssert (∃ l, ↓l l)%I with "[Hs']" as (l) "Hl".
-    { rewrite ltl_now_exists. iApply (ltl_now_mono_strong with "Hs'").
-      intros [tr Hwf]. intros Hred. destruct tr; [|done]. simpl in *. subst.
-      apply Hback in Hred.
-      destruct Hred as (l&s'&Hrel).
-      inversion Hwf.
-      { subst. apply H0 in Hrel. done. }
-      simplify_eq.
-      exists l0. simpl. eauto. }
+    iDestruct (ltl_lbl_state with "Hs'") as (l) "Hl".
+    { apply Hback. }
     iDestruct (ltl_dup with "Hl") as "[Hl Hl']".
     iFrame. clear Hback.
     iDestruct (trace_steps_label_rel _ l (λ s2', ∃ s1' : S, Rel s1 l s1' ∧ ϕ s1' s2') with "[$Hs $Hl]") as "H".
@@ -406,6 +421,7 @@ Section ltl_now_state_label_lemmas.
     by exists s.
   Qed.
 
+  (* TODO: Clean up this, vs [ltl_lbl_red] *)
   Lemma ltl_lbl P :
     (∀ osl, P osl → ∃ s ol, osl = Some (s,ol) ∧ is_Some ol) → ↓ P ⊢ ∃ l, ↓l l : tProp.
   Proof.

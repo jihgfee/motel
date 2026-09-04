@@ -24,7 +24,7 @@ theories/ltl_fixpoints.v
 theories/ltl_now.v
 theories/ltl_adequacy.v
 theories/classical.v
-theories/examples.v
-theories/stenning.v
-theories/parity.v
-theories/petri_nets.v
+theories/examples/examples.v
+theories/examples/stenning.v
+theories/examples/parity.v
+theories/examples/petri_nets.v

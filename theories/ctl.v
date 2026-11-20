@@ -258,7 +258,16 @@ Section ctl_test.
     (∀∀ P → Q) ∧ (∃∃ P) ⊢ ∃∃ Q.
   Proof. iIntros "[HPQ HP]". iMod "HP". by iApply "HPQ". Qed.
 
+  Lemma ltl_forall_always_eventually_test (P : tProp) :
+    (∀∀ ◊ ∀∀ □ P) ⊢ ∀∀ ◊ □ P.
+  Proof.
+    iIntros "HP !>".
+    iMod "HP". iModIntro.
+    by rewrite ltl_forall_path_elim.
+  Qed.
+
 End ctl_test.
+
 
 (*
 TODO:
@@ -266,3 +275,4 @@ TODO:
 - Better support alongside MoSeL □. Might want a new □ that is for all paths,
   alongside current □, which corresponds to ltl G.
 *)
+

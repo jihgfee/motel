@@ -266,8 +266,15 @@ Section ctl_test.
     by rewrite ltl_forall_path_elim.
   Qed.
 
-End ctl_test.
+  Lemma ltl_forall_always_eventually_test2 (P Q : tProp) :
+    (∀∀ □ (P → ∀∀ ◊ Q)) ⊢ ∀∀ (P → ◊ Q).
+  Proof.
+    iIntros "HPQ !> HP".
+    iDestruct ("HPQ" with "HP") as "HQ".
+    by rewrite ltl_forall_path_elim.
+  Qed.
 
+End ctl_test.
 
 (*
 TODO:

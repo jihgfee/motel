@@ -577,7 +577,7 @@ Section ltl_until.
   Proof. iApply ltl_false_until. Qed.
 
   Global Instance from_modal_until (P Q : tProp) :
-    @FromModal ltlI ltlI _ True%type modality_id (P ∪ Q) (P ∪ Q) (Q) | 2.
+    @FromModal _ ltlI ltlI _ True%type modality_id (P ∪ Q) (P ∪ Q) (Q) | 2.
   Proof. intros _. apply ltl_until_intro_now. Qed.
 
   Global Instance from_next_until (P Q : tProp) : FromNext (P ∪ Q) ((○ P) ∪ (○ Q)) | 2.

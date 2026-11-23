@@ -1,6 +1,7 @@
-From ltl Require Export trace.
-From iris.proofmode Require Import coq_tactics reduction spec_patterns.
+From iris.algebra Require Import stepindex_finite.
+From iris.proofmode Require Import rocq_tactics reduction spec_patterns.
 From iris.proofmode Require Export proofmode.
+From ltl Require Export trace.
 
 Definition tProp S L R := wf_trace S L R → Prop.
 
@@ -592,7 +593,7 @@ Section ltl_bi.
   Definition ltl_sep (P Q : tProp) : tProp := ltl_and P Q.
   Definition ltl_wand (P Q : tProp) : tProp := ltl_impl P Q.
   Definition ltl_persistently (P : tProp) : tProp := ltl_always P.
-  Definition ltl_later (P : tProp) : tProp := P.
+  Definition ltl_later (P : tProp) : tProp := ltl_pure True.
 
   Local Existing Instance entails_po.
 
@@ -673,8 +674,11 @@ Section ltl_bi.
       ltl_entails ltl_pure ltl_or ltl_impl
       (@ltl_forall S L Rel) (@ltl_exist S L Rel) ltl_and ltl_persistently ltl_later.
   Proof.
-    eapply bi_later_mixin_id; [done|];
-      [done..|apply ltl_bi_mixin].
+    eapply bi_later_mixin_True. 
+    - done.
+    - done.
+    - apply ltl_bi_mixin.
+    - apply  ltl_bi_persistently_mixin.
   Qed.
 
 End ltl_bi.
@@ -725,9 +729,9 @@ Section restate.
   Proof. by rewrite -ltl_or_unseal. Qed.
   Lemma ltl_impl_unseal : bi_impl = @ltl_impl_def S L Rel.
   Proof. by rewrite -ltl_impl_unseal. Qed.
-  Lemma ltl_forall_unseal : @bi_forall _ = @ltl_forall_def S L Rel.
+  Lemma ltl_forall_unseal : @bi_forall _ _ = @ltl_forall_def S L Rel.
   Proof. by rewrite -ltl_forall_unseal. Qed.
-  Lemma ltl_exist_unseal : @bi_exist _ = @ltl_exist_def S L Rel.
+  Lemma ltl_exist_unseal : @bi_exist _ _ = @ltl_exist_def S L Rel.
   Proof. by rewrite -ltl_exist_unseal. Qed.
   Lemma ltl_persistently_unseal : bi_persistently = @ltl_always_def S L Rel.
   Proof. rewrite -ltl_always_unseal. done. Qed.
@@ -772,7 +776,7 @@ Section ltl_axioms.
   Import tProp.
 
   Lemma bi_intuitionistically_always (P : tProp) :
-    @bi_intuitionistically (@ltlI S L Rel) P ≡ ltl_always P.
+    @bi_intuitionistically _ (@ltlI S L Rel) P ≡ ltl_always P.
   Proof.
     rewrite /bi_intuitionistically.
     rewrite /bi_affinely.

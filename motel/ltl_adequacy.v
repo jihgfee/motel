@@ -1,4 +1,4 @@
-From ltl Require Import ltl ltl_fixpoints ltl_now.
+From motel Require Import ltl ltl_fixpoints ltl_now.
 
 Section ltl_adequacy.
   Context {S L : Type}.

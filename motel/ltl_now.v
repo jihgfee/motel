@@ -1,4 +1,4 @@
-From ltl Require Import ltl ltl_fixpoints.
+From motel Require Import ltl ltl_fixpoints.
 
 Import tProp.
 

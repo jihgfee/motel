@@ -1,5 +1,5 @@
 From Stdlib.Logic Require Import ClassicalFacts.
-From ltl Require Import ltl ltl_fixpoints ltl_now ltl_adequacy.
+From motel Require Import ltl ltl_fixpoints ltl_now ltl_adequacy.
 
 Axiom excluded_middle : ∀ P, P ∨ ¬ P.
 

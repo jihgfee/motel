@@ -1,6 +1,6 @@
 From iris.proofmode Require Import modality_instances.
 From iris.bi Require Export fixpoint_mono.
-From ltl Require Export ltl.
+From motel Require Export ltl.
 
 Section ltl_until.
   Context {S L : Type}.

@@ -1,4 +1,4 @@
--Q theories ltl
+-Q motel motel
 
 # We sometimes want to locally override notation (e.g. in proofmode/base.v, bi/embedding.v), and there
 # is no good way to do that with scopes.
@@ -18,17 +18,17 @@
 -arg -w -arg -notation-for-abbreviation
 -arg -w -arg -masking-absolute-name
 
-theories/trace.v
-theories/ltl.v
-theories/ltl_fixpoints.v
-theories/ltl_now.v
-theories/ltl_adequacy.v
-theories/classical.v
-theories/examples/basics.v
-theories/examples/increment.v
-theories/examples/fair_coin.v
-theories/examples/fair_sched.v
-theories/examples/yes_no.v
-theories/examples/stenning.v
-theories/examples/parity.v
-theories/examples/petri_nets.v
+motel/trace.v
+motel/ltl.v
+motel/ltl_fixpoints.v
+motel/ltl_now.v
+motel/ltl_adequacy.v
+motel/classical.v
+motel/examples/basics.v
+motel/examples/increment.v
+motel/examples/fair_coin.v
+motel/examples/fair_sched.v
+motel/examples/yes_no.v
+motel/examples/stenning.v
+motel/examples/parity.v
+motel/examples/petri_nets.v

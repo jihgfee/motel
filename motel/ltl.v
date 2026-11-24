@@ -1,7 +1,7 @@
 From iris.algebra Require Import stepindex_finite.
 From iris.proofmode Require Import rocq_tactics reduction spec_patterns.
 From iris.proofmode Require Export proofmode.
-From ltl Require Export trace.
+From motel Require Export trace.
 
 Definition tProp S L R := wf_trace S L R → Prop.
 

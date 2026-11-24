@@ -1,28 +1,28 @@
 # Default target
-all: Makefile.coq
-	+@$(MAKE) -f Makefile.coq all
+all: Makefile.rocq
+	+@$(MAKE) -f Makefile.rocq all
 .PHONY: all
 
 # Permit local customization
 -include Makefile.local
 
-# Forward most targets to Coq makefile (with some trick to make this phony)
-%: Makefile.coq phony
+# Forward most targets to Rocq makefile (with some trick to make this phony)
+%: Makefile.rocq phony
 	@#echo "Forwarding $@"
-	+@$(MAKE) -f Makefile.coq $@
+	+@$(MAKE) -f Makefile.rocq $@
 phony: ;
 .PHONY: phony
 
-clean: Makefile.coq
-	+@$(MAKE) -f Makefile.coq clean
+clean: Makefile.rocq
+	+@$(MAKE) -f Makefile.rocq clean
 	@# Make sure not to enter the `_opam` folder.
 	find [a-z]*/ \( -name "*.d" -o -name "*.vo" -o -name "*.vo[sk]" -o -name "*.aux" -o -name "*.cache" -o -name "*.glob" -o -name "*.vio" \) -print -delete || true
-	rm -f Makefile.coq .lia.cache builddep/*
+	rm -f Makefile.rocq .lia.cache builddep/*
 .PHONY: clean
 
-# Create Coq Makefile.
-Makefile.coq: _CoqProject Makefile
-	"$(COQBIN)rocq" makefile -f _CoqProject -o Makefile.coq $(EXTRA_COQFILES)
+# Create Rocq Makefile.
+Makefile.rocq: _RocqProject Makefile
+	"$(ROCQBIN)rocq" makefile -f _RocqProject -o Makefile.rocq $(EXTRA_ROCQFILES)
 
 # Install build-dependencies
 OPAMFILES=$(wildcard *.opam)
@@ -50,6 +50,6 @@ builddep: builddep-opamfiles
 build-dep: builddep
 .PHONY: build-dep
 
-# Some files that do *not* need to be forwarded to Makefile.coq.
+# Some files that do *not* need to be forwarded to Makefile.rocq.
 # ("::" lets Makefile.local overwrite this.)
-Makefile Makefile.local _CoqProject $(OPAMFILES):: ;
+Makefile Makefile.local _RocqProject $(OPAMFILES):: ;

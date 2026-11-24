@@ -1,4 +1,3 @@
-(* From iris.proofmode Require Import coq_tactics reduction spec_patterns. *)
 From iris.proofmode Require Import modality_instances.
 From iris.bi Require Export fixpoint_mono.
 From ltl Require Export ltl.

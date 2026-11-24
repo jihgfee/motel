@@ -1,19 +1,19 @@
 # MoTeL: Modal Temporal Logic Proofmode
 
-MoTeL is a proofmode interface for working with modal temporal logic in Rocq, built on top of the MoSeL proofmode interface for separation logic, most notably used for the Iris logic: https://iris-project.org/ .
+MoTeL is a proofmode interface for working with modal temporal logic in Rocq, built on top of the MoSeL proofmode interface for separation logic, most notably used for the Iris logic: https://iris-project.org/
 
 ## Installation Instructions
 
 ### Dependencies
 
-MoTeL has been installed with
+MoTeL has the following dependencies:
 
 - opam: 2.5.1
 - OCaml: 5.4.1
 - Rocq: 9.2.0
 - Iris: d6bbe37c
 
-To install `opam` we refer to https://opam.ocaml.org/doc/Install.html .
+To install `opam` we refer to https://opam.ocaml.org/doc/Install.html
 
 We recommend setting up an opam switch via
 
@@ -31,7 +31,7 @@ The dependencies can then be installed via
 
 `make builddep`
 
-## Overview
+## Overview of Proofmode
 
 The proofmode interface can be instantiated by giving a labelled transition system (LTS) model by providing a notion of state (S), label (L), and transition relation (R).
 
@@ -52,8 +52,8 @@ The proofmode provides infrastructure for proving model-level axioms, that refle
 To give an example, consider the following model (mechanised via MoTeL in [./theories/examples/fair_coin.v](./theories/examples/fair_coin.v)):
 
 ```
-  S := bool.
-  L := bool.
+  S := bool
+  L := bool
   R := b -[b]-> (¬ b) | b -[¬b]-> b
 ```
 

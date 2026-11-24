@@ -49,7 +49,7 @@ We additionally have `↓s x` and `↓l x` variants of `↓ p` that asserts the 
 
 The proofmode provides infrastructure for proving model-level axioms, that reflect the LTS transition relation in LTL.
 
-To give an example, consider the following model (mechanised via MoTeL in [./theories/examples/fair_coin.v](./theories/examples/fair_coin.v)):
+To give an example, consider the following model (mechanised via MoTeL in [./motel/examples/fair_coin.v](./motel/examples/fair_coin.v)):
 
 ```
   S := bool

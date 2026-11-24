@@ -1,0 +1,15 @@
+opam-version: "2.0"
+maintainer: "Jonas Kastberg Hinrichsen"
+synopsis: "MoTeL: A Modal Temporal Logic Proofmode"
+homepage: "TBD"
+authors: "The MoTeL Team"
+license: "BSD-3-Clause"
+bug-reports: "https://github.com/jihgfee/ltl.git/issues"
+dev-repo: "git+https://github.com/jihgfee/ltl.git"
+
+depends: [
+  "rocq-iris" { (= "dev.2026-11-24.1.d6bbe37c") | (= "dev") }
+]
+
+build: ["./make-package" "tpl" "-j%{jobs}%"]
+install: ["./make-package" "tpl"  "install"]

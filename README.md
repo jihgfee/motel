@@ -11,7 +11,7 @@ MoTeL has been installed with
 - opam: 2.5.1
 - OCaml: 5.4.1
 - Rocq: 9.2.0
-- Iris: 8e5e08bc (branch)
+- Iris: d6bbe37c
 
 To install `opam` we refer to https://opam.ocaml.org/doc/Install.html .
 
@@ -19,13 +19,17 @@ We recommend setting up an opam switch via
 
 `opam switch create motel 5.4.1`.
 
-Rocq can be installed via
+To install the Rocq and Iris dependencies, first add their repositories to opam with
 
-`opam install rocq-core.9.2.0`
+`opam repo add rocq-released https://rocq-prover.github.io/opam/released/`
 
-The specific Iris version can be found here: https://gitlab.mpi-sws.org/iris/iris/-/tree/robbert/elim_modal_modality
+and
 
-It can be installed following the build instructions of Iris.
+`opam repo add iris-dev https://gitlab.mpi-sws.org/iris/opam.git`
+
+The dependencies can then be installed via
+
+`make builddep`
 
 ## Overview
 

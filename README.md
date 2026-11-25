@@ -17,7 +17,7 @@ To install `opam` we refer to https://opam.ocaml.org/doc/Install.html
 
 We recommend setting up an opam switch via
 
-`opam switch create motel 5.4.1`.
+`opam switch create motel 5.4.1`
 
 To install the Rocq and Iris dependencies, first add their repositories to opam with
 

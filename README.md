@@ -29,7 +29,19 @@ and
 
 The dependencies can then be installed via
 
-`make builddep`
+`make builddep [num CPU cores]`
+
+### Building
+
+Once the above dependencies have been installed, the development can be built using
+
+`make [num CPU cores]`
+
+### Installation 
+
+After building the development it can be installed to the opam switch via
+
+`make install`
 
 ## Overview of Development
 

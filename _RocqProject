@@ -17,6 +17,8 @@
 -arg -w -arg -argument-scope-delimiter
 -arg -w -arg -notation-for-abbreviation
 -arg -w -arg -masking-absolute-name
+# Suppress Rocq 9.3.0 rewrite warning
+-arg -w -arg -rewrite-rw
 
 motel/trace.v
 motel/ltl.v

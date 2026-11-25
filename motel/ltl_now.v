@@ -10,8 +10,8 @@ Section ltl_primitives.
 
   (* LTL Operators *)
   (* Primitive operators *)
-  Definition ltl_now_def (P : option (S * option L) → Prop) : tProp :=
-    λ tr, P (wf_head tr).
+  Definition ltl_now_def (φ : option (S * option L) → Prop) : tProp :=
+    λ tr, φ (wf_head tr).
   Definition ltl_now_aux : seal (@ltl_now_def).
   Proof. by eexists. Qed.
   Definition ltl_now := unseal ltl_now_aux.
@@ -21,7 +21,7 @@ Section ltl_primitives.
 End ltl_primitives.
 
 Global Instance: Params (@ltl_now) 2 := {}.
-Notation "↓ P" := (ltl_now P) (at level 20, right associativity) : bi_scope.
+Notation "↓ φ" := (ltl_now φ) (at level 20, right associativity) : bi_scope.
 
 Section ltl_now_termination.
   Context {S L : Type}.
@@ -52,43 +52,43 @@ Section ltl_now_axioms.
   Notation tProp := (tProp S L Rel).
   Notation tPred := (option (S * option L) → Prop).
 
-  Lemma ltl_now_mono P Q :
-    (∀ osl, P osl → Q osl) → ↓ P ⊢ (↓ Q):tProp.
+  Lemma ltl_now_mono φ ψ :
+    (∀ osl, φ osl → ψ osl) → ↓ φ ⊢ (↓ ψ):tProp.
   Proof.
     intros HPQ. rewrite ltl_now_unseal.
     constructor. intros. by apply HPQ.
   Qed.
 
-  Lemma ltl_now_mono_strong P Q :
-    (∀ (tr : wf_trace S L Rel), P (wf_head tr) → Q (wf_head tr)) → ↓ P ⊢ ↓ Q : tProp.
+  Lemma ltl_now_mono_strong φ ψ :
+    (∀ (tr : wf_trace S L Rel), φ (wf_head tr) → ψ (wf_head tr)) → ↓ φ ⊢ ↓ ψ : tProp.
   Proof.
     intros HPQ. rewrite ltl_now_unseal.
     constructor. intros. by apply HPQ.
   Qed.
 
-  Lemma ltl_now_forall {A} (P : A → tPred) :
-    (∀ (x:A), ↓ (P x)) ⊣⊢@{tProp} (↓ (λ osl, (∀ x, (P x) osl))%type).
+  Lemma ltl_now_forall {A} (φ : A → tPred) :
+    (∀ (x:A), ↓ (φ x)) ⊣⊢@{tProp} (↓ (λ osl, (∀ x, (φ x) osl))%type).
   Proof. rewrite ltl_now_unseal. unseal. done. Qed.
 
-  Lemma ltl_now_exists {A} (P : A → tPred) :
-    (∃ (x:A), ↓ (P x)) ⊣⊢@{tProp} (↓ (λ osl, (∃ x, (P x) osl))%type).
+  Lemma ltl_now_exists {A} (φ : A → tPred) :
+    (∃ (x:A), ↓ (φ x)) ⊣⊢@{tProp} (↓ (λ osl, (∃ x, (φ x) osl))%type).
   Proof. rewrite ltl_now_unseal. unseal. done. Qed.
 
-  Lemma ltl_now_not (P : option (S * option L) → Prop) :
-    ¬ ↓ P ⊢ ↓ (λ osl, ¬ (P osl) : Prop) : tProp.
+  Lemma ltl_now_not (φ : option (S * option L) → Prop) :
+    ¬ ↓ φ ⊢ ↓ (λ osl, ¬ (φ osl) : Prop) : tProp.
   Proof. rewrite ltl_now_unseal. unseal. done. Qed.
 
-  Lemma ltl_now_pure_strong (P : option (S * option L) → Prop) :
-    ↓ P ⊢ ∃ (tr : wf_trace S L Rel), ⌜P (wf_head tr)⌝ : tProp.
+  Lemma ltl_now_pure_strong (φ : option (S * option L) → Prop) :
+    ↓ φ ⊢ ∃ (tr : wf_trace S L Rel), ⌜φ (wf_head tr)⌝ : tProp.
   Proof.
     rewrite ltl_now_unseal. unseal.
     constructor.
     intros. simplify_eq; eexists tr; eauto.
   Qed.
 
-  Lemma trace_steps_strong (P Q : tProp) :
-    (∀ (tr : wf_trace S L Rel), P tr → Q (wf_tail tr)) →
-    P ⊢@{tProp} ○ Q : tProp.
+  Lemma trace_steps_strong (φ ψ : tProp) :
+    (∀ (tr : wf_trace S L Rel), φ tr → ψ (wf_tail tr)) →
+    φ ⊢@{tProp} ○ ψ : tProp.
   Proof.
     intros HPQ.
     constructor=> tr. rewrite ltl_next_unseal.
@@ -157,14 +157,14 @@ Section ltl_now_lemmas.
     IntoSep (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp) (↓ ϕ) (↓ ψ).
   Proof. rewrite /IntoSep. by rewrite bi_sep_and ltl_now_and. Qed.
 
-  Lemma ltl_now_pure (P : option (S * option L) → Prop) :
-    ↓ P ⊢ ∃ osl, ⌜P osl⌝ : tProp.
+  Lemma ltl_now_pure (φ : option (S * option L) → Prop) :
+    ↓ φ ⊢ ∃ osl, ⌜φ osl⌝ : tProp.
   Proof.
     iIntros "H". iDestruct (ltl_now_pure_strong with "H") as %[tr Htr]. eauto.
   Qed.
 
-  Lemma ltl_now_false (P Q : option (S *option L) → Prop) :
-    (∀ osl, P osl → Q osl → False) → (↓ P:tProp) -∗ ↓ Q -∗ False.
+  Lemma ltl_now_false (φ ψ : option (S *option L) → Prop) :
+    (∀ osl, φ osl → ψ osl → False) → (↓ φ:tProp) -∗ ↓ ψ -∗ False.
   Proof.
     iIntros (HPQ) "HP HQ".
     iCombine "HP HQ" as "HPQ".
@@ -269,8 +269,9 @@ Section ltl_now_state_label_lemmas.
     intros [[? []]|]=> /=; try by naive_solver.
   Qed.
 
-  Lemma ltl_lbl_red P :
-    (∀ osl, P osl → ∃ s ol, osl = Some (s, ol) ∧ reducible Rel s) → ↓ P ⊢ ∃ l, ↓l l : tProp.
+  Lemma ltl_lbl_red φ :
+    (∀ osl, φ osl → ∃ s ol, osl = Some (s, ol) ∧ reducible Rel s) →
+    ↓ φ ⊢ ∃ l, ↓l l : tProp.
   Proof.
     intros Hred. iIntros "HP".
     iAssert (∃ l, ↓l l)%I with "[HP]" as (l) "Hl".
@@ -289,8 +290,8 @@ Section ltl_now_state_label_lemmas.
     iExists l. done.
   Qed.
 
-  Lemma ltl_lbl_state P :
-    (∀ s, P s → reducible Rel s) → ↓s' P ⊢ ∃ l, ↓l l : tProp.
+  Lemma ltl_lbl_state φ :
+    (∀ s, φ s → reducible Rel s) → ↓s' φ ⊢ ∃ l, ↓l l : tProp.
   Proof.
     intros HP.
     iIntros "HP".
@@ -298,16 +299,16 @@ Section ltl_now_state_label_lemmas.
     intros [[]|]=> /=; intros ?; try by eauto.
   Qed.
 
-  Lemma trace_steps_now_strong (P Q : option (S * option L) → Prop) :
-    (∀ (tr : wf_trace S L Rel), P (wf_head tr) → Q (wf_head (wf_tail tr))) →
-    ↓ P ⊢@{tProp} ○ ↓ Q : tProp.
+  Lemma trace_steps_now_strong (φ ψ : option (S * option L) → Prop) :
+    (∀ (tr : wf_trace S L Rel), φ (wf_head tr) → ψ (wf_head (wf_tail tr))) →
+    ↓ φ ⊢@{tProp} ○ ↓ ψ : tProp.
   Proof.
     intros HPQ. apply trace_steps_strong. intros tr. rewrite ltl_now_unseal. apply HPQ.
   Qed.
 
-  Lemma trace_steps_label_rel (P : S → Prop) l (Qs : S → Prop) :
-    (∀ s s', P s → Rel s l s' → Qs s') →
-    ↓s' P ∧ ↓l l ⊢@{tProp} ○ ↓s' Qs.
+  Lemma trace_steps_label_rel (φ : S → Prop) l (Qs : S → Prop) :
+    (∀ s s', φ s → Rel s l s' → Qs s') →
+    ↓s' φ ∧ ↓l l ⊢@{tProp} ○ ↓s' Qs.
   Proof.
     iIntros (HPQ) "[Hs Hl]".
     iCombine "Hs Hl" as "Hsl".
@@ -318,10 +319,10 @@ Section ltl_now_state_label_lemmas.
     eapply HPQ; [done|]. inversion Hwf; naive_solver.
   Qed.
 
-  Lemma trace_steps_rel (P : S → Prop) (Qs : S → Prop) :
-    (∀ s, P s → reducible Rel s) →
-    (∀ s l s', P s → Rel s l s' → Qs s') →
-    ↓s' P ⊢@{tProp} ○ ↓s' Qs.
+  Lemma trace_steps_rel (φ : S → Prop) (Qs : S → Prop) :
+    (∀ s, φ s → reducible Rel s) →
+    (∀ s l s', φ s → Rel s l s' → Qs s') →
+    ↓s' φ ⊢@{tProp} ○ ↓s' Qs.
   Proof.
     iIntros (Hback HPQ) "Hs".
     iDestruct (bi_dup with "Hs") as "[Hs Hs']".
@@ -406,7 +407,7 @@ Section ltl_now_state_label_lemmas.
     specialize (Hdet _ _ _ _ Hred HRel'). subst. done.
   Qed.
 
-  Lemma ltl_st P : (∀ osl, P osl → is_Some osl) → ↓ P ⊢ ∃ s, ↓s s : tProp.
+  Lemma ltl_st φ : (∀ osl, φ osl → is_Some osl) → ↓ φ ⊢ ∃ s, ↓s s : tProp.
   Proof.
     intros HP.
     rewrite ltl_now_exists.
@@ -416,8 +417,8 @@ Section ltl_now_state_label_lemmas.
     by exists s.
   Qed.
 
-  Lemma ltl_lbl P :
-    (∀ osl, P osl → ∃ s ol, osl = Some (s,ol) ∧ is_Some ol) → ↓ P ⊢ ∃ l, ↓l l : tProp.
+  Lemma ltl_lbl φ :
+    (∀ osl, φ osl → ∃ s ol, osl = Some (s,ol) ∧ is_Some ol) → ↓ φ ⊢ ∃ l, ↓l l : tProp.
   Proof.
     intros HP.
     rewrite ltl_now_exists.

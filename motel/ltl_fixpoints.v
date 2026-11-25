@@ -386,10 +386,9 @@ Section ltl_until.
   Proof.
     rewrite /IntoSep.
     simpl.
-    rewrite !bi_sep_and.
-    intros HPQ.
-    rewrite -ltl_eventually_and.
-    by eapply ltl_eventually_mono.
+    iIntros (HPQ) "HPQ".
+    iApply ltl_eventually_and.
+    by iApply (ltl_eventually_mono _ _ HPQ).
   Qed.
 
   Global Instance into_next_eventually (P Q : tProp) :

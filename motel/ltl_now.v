@@ -146,7 +146,7 @@ Section ltl_now_lemmas.
 
   Global Instance ltl_now_combine (ϕ ψ : option (S * option L) → Prop) :
     CombineSepAs (↓ ϕ) (↓ ψ) (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp).
-  Proof. by rewrite /CombineSepAs bi_sep_and ltl_now_and. Qed.
+  Proof. by rewrite /CombineSepAs -ltl_now_and. Qed.
 
   Global Instance into_and_now b (ϕ ψ : option (S * option L) → Prop) :
     IntoAnd b (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp) (↓ ϕ) (↓ ψ).
@@ -155,7 +155,7 @@ Section ltl_now_lemmas.
   (* This is needed as destruct pattern otherwise turn terms into sep *)
   Global Instance into_sep_now (ϕ ψ : option (S * option L) → Prop) :
     IntoSep (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp) (↓ ϕ) (↓ ψ).
-  Proof. rewrite /IntoSep. by rewrite bi_sep_and ltl_now_and. Qed.
+  Proof. rewrite /IntoSep. by rewrite -ltl_now_and. Qed.
 
   Lemma ltl_now_pure (φ : option (S * option L) → Prop) :
     ↓ φ ⊢ ∃ osl, ⌜φ osl⌝ : tProp.
@@ -488,14 +488,14 @@ Section ltl_now_state_label_lemmas.
   Global Instance ltl_now_state_combine (ϕ ψ : S → Prop) :
     CombineSepAs (↓s' ϕ) (↓s' ψ) (↓s' (ϕ ⟨⟨and⟩⟩ ψ):tProp).
   Proof.
-    rewrite /CombineSepAs bi_sep_and.
+    rewrite /CombineSepAs.
     iIntros "[H1 H2]". iApply (ltl_now_state_and with "H1 H2").
   Qed.
 
   Global Instance ltl_now_label_combine (ϕ ψ : L → Prop) :
     CombineSepAs (↓l' ϕ) (↓l' ψ) (↓l' (ϕ ⟨⟨and⟩⟩ ψ):tProp).
   Proof.
-    rewrite /CombineSepAs bi_sep_and.
+    rewrite /CombineSepAs.
     iIntros "[H1 H2]". iApply (ltl_now_label_and with "H1 H2").
   Qed.
 
@@ -536,7 +536,7 @@ Section ltl_now_state_prod.
 
   Global Instance ltl_now_prod_combine (s1 : S1) (s2 : S2) :
     CombineSepAs (↓fs fst s1) (↓fs snd s2) (↓s (s1,s2):tProp).
-  Proof. by rewrite /CombineSepAs bi_sep_and ltl_now_prod_and. Qed.
+  Proof. by rewrite /CombineSepAs -ltl_now_prod_and. Qed.
 
   Global Instance into_and_now_prod b (s1 : S1) (s2 : S2) :
     IntoAnd b (↓s (s1,s2):tProp) (↓fs fst s1) (↓fs snd s2).
@@ -545,7 +545,7 @@ Section ltl_now_state_prod.
   (* This is needed as destruct pattern otherwise turn terms into sep *)
   Global Instance into_sep_now_prod (s1 : S1) (s2 : S2) :
     IntoSep (↓s (s1,s2):tProp) (↓fs fst s1) (↓fs snd s2).
-  Proof. rewrite /IntoSep. by rewrite bi_sep_and ltl_now_prod_and. Qed.
+  Proof. rewrite /IntoSep. by rewrite -ltl_now_prod_and. Qed.
 
 End ltl_now_state_prod.
 
@@ -584,7 +584,7 @@ Section ltl_now_label_prod.
 
   Global Instance ltl_now_prod_label_combine (l1 : L1) (l2 : L2) :
     CombineSepAs (↓fl fst l1) (↓fl snd l2) (↓l (l1,l2):tProp).
-  Proof. by rewrite /CombineSepAs bi_sep_and ltl_now_label_prod_and. Qed.
+  Proof. by rewrite /CombineSepAs -ltl_now_label_prod_and. Qed.
 
   Global Instance into_and_now_label_prod b (l1 : L1) (l2 : L2) :
     IntoAnd b (↓l (l1,l2):tProp) (↓fl fst l1) (↓fl snd l2).
@@ -593,7 +593,7 @@ Section ltl_now_label_prod.
   (* This is needed as destruct pattern otherwise turn terms into sep *)
   Global Instance into_sep_now_label_prod (l1 : L1) (l2 : L2) :
     IntoSep (↓l (l1,l2):tProp) (↓fl fst l1) (↓fl snd l2).
-  Proof. rewrite /IntoSep. by rewrite bi_sep_and ltl_now_label_prod_and. Qed.
+  Proof. rewrite /IntoSep. by rewrite -ltl_now_label_prod_and. Qed.
 
 End ltl_now_label_prod.
 

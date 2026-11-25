@@ -740,34 +740,10 @@ End restate.
 Ltac unseal := rewrite !ltl_unseal /=.
 End tProp.
 
-Section helper_lemmas.
-  Context {S L : Type}.
-  Context {Rel : S → L → S → Prop}.
-
-  Notation tProp := (tProp S L Rel).
-
-  Import tProp.
-
-  Lemma impl_intro_l (P Q : tProp) :
-    (⊢ P → Q) → (P ⊢ Q).
-  Proof. iIntros (HPQ) "HP". by iApply HPQ. Qed.
-  Lemma impl_intro_r (P Q : tProp) :
-    (P ⊢ Q) → (⊢ P → Q).
-  Proof. iIntros (HPQ) "HP". by rewrite HPQ. Qed.
-
-  Lemma bi_sep_and (P Q : tProp) :
-    P ∗ Q ⊣⊢ P ∧ Q.
-  Proof. constructor. intros tr. unseal. done. Qed.
-  Lemma bi_wand_impl (P Q : tProp) :
-    (P -∗ Q) ⊣⊢ (P → Q).
-  Proof. constructor. intros tr. unseal. done. Qed.
-
-End helper_lemmas.
-
 (* Override combine functionality that turns hyps into sep *)
 Global Instance ltl_and_combine {S L Rel} (P Q : tProp S L Rel) :
   CombineSepAs P Q (P ∧ Q) | 10.
-Proof. by rewrite /CombineSepAs bi_sep_and. Qed.
+Proof. by rewrite /CombineSepAs. Qed.
 
 Global Instance ltl_next_mono' {S L Rel} :
   Proper ((⊢) ==> (⊢)) (@ltl_next S L Rel).
@@ -1042,7 +1018,7 @@ Section ltl_derived_rules.
     iDestruct ("H" with "HP") as "[HQ H]".
     rewrite ltl_iter_forall.
     iCombine "H H'" as "H". rewrite ltl_next_and.
-    iRevert "H". rewrite bi_wand_impl. iApply ltl_next_mono_strong.
+    iRevert "H". iApply ltl_next_mono_strong.
     iApply ltl_always_elim. iApply ltl_always_next_comm. iApply ltl_always_next.
     iIntros "!> [H H']".
     iDestruct "H" as "[HP|HQ]"; last first.
@@ -1134,7 +1110,7 @@ Section ltl_proofmode.
 
   Global Instance ltl_next_combine (P Q : tProp) :
     CombineSepAs (○ P) (○ Q) (○ (P ∧ Q)).
-  Proof. by rewrite /CombineSepAs bi_sep_and ltl_next_and. Qed.
+  Proof. by rewrite /CombineSepAs -ltl_next_and. Qed.
 
   Class FromNext (P Q : tProp) :=
     from_next : ○ P ⊢ Q.

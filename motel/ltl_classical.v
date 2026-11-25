@@ -80,7 +80,7 @@ Section classical.
     (◊ P)%I ≡ (¬ (□ (¬ P)))%I.
   Proof.
     iSplit.
-    - rewrite ltl_always_unseal'.
+    - rewrite ltl_intuitionistically_unseal.
       rewrite !ltl_eventually_next_equiv.
       iIntros "[%n HP]".
       iIntros "HP'". iSpecialize ("HP'" $! n).

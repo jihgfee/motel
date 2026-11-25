@@ -176,9 +176,7 @@ Section primitive.
   Lemma and_intro P Q R : (P ⊢ Q) → (P ⊢ R) → P ⊢ Q ∧ R.
   Proof.
     intros HQ HR; unseal; split=> n ?.
-    split.
-    - by apply HQ.
-    - by apply HR.
+    split; [by apply HQ|by apply HR].
   Qed.
 
   Lemma or_intro_l P Q : P ⊢ P ∨ Q.
@@ -187,9 +185,7 @@ Section primitive.
   Proof. unseal; split=> n ?; right; auto. Qed.
   Lemma or_elim P Q R : (P ⊢ R) → (Q ⊢ R) → P ∨ Q ⊢ R.
   Proof.
-    intros HP HQ. unseal; split=> n [?|?].
-    - by apply HP.
-    - by apply HQ.
+    intros HP HQ. unseal; split=> n [?|?]; [by apply HP|by apply HQ].
   Qed.
 
   Lemma impl_intro_r P Q R : (P ∧ Q ⊢ R) → P ⊢ Q → R.
@@ -294,7 +290,7 @@ Section ltl_axioms.
 
   (** Next *)
 
-  Lemma ltl_next_taut' (P : tProp) :
+  Lemma ltl_next_taut_pre (P : tProp) :
     (True ⊢ P) → (True ⊢ ○ P).
   Proof.
     unseal.
@@ -307,9 +303,7 @@ Section ltl_axioms.
   Lemma ltl_next_mono_strong (P Q : tProp) :
     ○ (P → Q) ⊢ ○ P → ○ Q.
   Proof.
-    unseal.
-    constructor.
-    intros tr HPQ HP.
+    unseal. constructor. intros tr HPQ HP.
     destruct tr as [[[]|]]; simpl in *; by apply HPQ.
   Qed.
 
@@ -319,12 +313,11 @@ Section ltl_axioms.
     intros HPQ.
     etrans.
     { apply and_intro.
-      - instantiate (1:= (True)%I).
-        apply pure_intro. done.
+      - instantiate (1:= (True)%I). by apply pure_intro.
       - exact.
     }
     apply impl_elim_l'. etrans; [|apply ltl_next_mono_strong].
-    apply ltl_next_taut'.
+    apply ltl_next_taut_pre.
     apply impl_intro_r. etrans; [|apply HPQ].
     apply and_elim_r.
   Qed.
@@ -332,12 +325,9 @@ Section ltl_axioms.
   Lemma ltl_next_iter_mono_strong_pre n (P Q : tProp) :
     ○^n (P → Q) ⊢ ○^n P → ○^n Q.
   Proof.
-    induction n.
-    { done. }
-    simpl.
+    induction n; [done|]; simpl.
     etrans; [|apply ltl_next_mono_strong].
-    apply ltl_next_mono_pre.
-    done.
+    by apply ltl_next_mono_pre.
   Qed.
 
   Lemma ltl_next_forall_1 {A} (P : A → tProp) :
@@ -384,9 +374,10 @@ Section ltl_axioms.
 
   Lemma ltl_always_ne : NonExpansive (@ltl_always S L Rel).
   Proof.
-    apply ne_proper. unseal. rewrite /ltl_always_def. unseal.
+    apply ne_proper. unseal. rewrite /ltl_always_def.
     constructor.
     intros.
+    unseal.
     constructor.
     + intros Hx n.
       specialize (Hx n).
@@ -396,8 +387,7 @@ Section ltl_axioms.
       apply ltl_next_iter_S.
       apply (IHn (○ x)%I (○ y)%I).
       { f_equiv. done. }
-      apply ltl_next_iter_S.
-      done.
+      by apply ltl_next_iter_S.
     + intros Hx n.
       specialize (Hx n).
       revert x y H Hx.
@@ -406,8 +396,7 @@ Section ltl_axioms.
       apply ltl_next_iter_S.
       apply (IHn (○ x)%I (○ y)%I).
       { f_equiv. done. }
-      apply ltl_next_iter_S.
-      done.
+      by apply ltl_next_iter_S.
   Qed.
 
   Lemma ltl_always_next_unfold P :
@@ -420,11 +409,8 @@ Section ltl_axioms.
     intros HP. rewrite ltl_always_next_unfold.
     apply forall_intro.
     intros n.
-    induction n.
-    { done. }
-    simpl.
-    apply ltl_next_taut'.
-    done.
+    induction n; [done|]; simpl.
+    by apply ltl_next_taut_pre.
   Qed.
 
   Lemma ltl_always_mono_strong_pre (P Q : tProp) :
@@ -540,11 +526,10 @@ Section ltl_lemmas.
     apply impl_elim_l'.
     etrans; [|apply ltl_always_mono_strong_pre].
     apply ltl_always_mono_pre.
-    apply impl_intro_r.
-    done.
+    by apply impl_intro_r.
   Qed.
 
-  (* Axiom of IPM instantiation *)
+  (* Axiom of MoSeL instantiation *)
   Lemma ltl_always_idemp_pre (P : tProp) :
     □ P ⊢ □ □ P.
   Proof.
@@ -559,12 +544,12 @@ Section ltl_lemmas.
     apply and_elim_r.
   Qed.
 
-  (* Axiom of IPM instantiation *)
+  (* Axiom of MoSeL instantiation *)
   Lemma ltl_always_affine (P Q : tProp) :
     (□ P) ∧ Q ⊢ (□ P).
   Proof. apply and_elim_l. Qed.
 
-  (* Axiom of IPM instantiation *)
+  (* Axiom of MoSeL instantiation *)
   Lemma ltl_always_sep_and (P Q : tProp) :
     (□ P) ∧ Q ⊢ P ∧ Q.
   Proof.
@@ -697,12 +682,17 @@ Section ltl_bi_typeclasses.
 
 End ltl_bi_typeclasses.
 
+(** extra BI instances *)
+
 Global Hint Immediate ltl_affine : core.
 
 (* This is needed to avoid collision with FromImpl *)
 Global Remove Hints class_instances.from_impl_impl : typeclass_instances.
 
-(** extra BI instances *)
+(* Override combine functionality that turns hyps into sep *)
+Global Instance ltl_and_combine {S L Rel} (P Q : tProp S L Rel) :
+  CombineSepAs P Q (P ∧ Q) | 10.
+Proof. by rewrite /CombineSepAs. Qed.
 
 (** Re-state/export soundness lemmas *)
 
@@ -739,11 +729,6 @@ End restate.
 (** The final unseal tactic that also unfolds the BI layer. *)
 Ltac unseal := rewrite !ltl_unseal /=.
 End tProp.
-
-(* Override combine functionality that turns hyps into sep *)
-Global Instance ltl_and_combine {S L Rel} (P Q : tProp S L Rel) :
-  CombineSepAs P Q (P ∧ Q) | 10.
-Proof. by rewrite /CombineSepAs. Qed.
 
 Global Instance ltl_next_mono' {S L Rel} :
   Proper ((⊢) ==> (⊢)) (@ltl_next S L Rel).
@@ -783,13 +768,11 @@ Section ltl_axioms.
     rewrite left_id. done.
   Qed.
 
-  (** AXIOMS *)
-
-  (** ltl_next lemmas *)
+  (** Next *)
 
   Lemma ltl_next_taut (P : tProp) :
     (⊢ P) → (⊢ ○ P).
-  Proof. apply ltl_next_taut'. Qed.
+  Proof. apply ltl_next_taut_pre. Qed.
 
   Lemma ltl_next_not (P : tProp) :
     ¬ ○ P ⊣⊢ ○ (¬ P).
@@ -850,7 +833,7 @@ Section ltl_axioms.
     (P ⊢ Q) → (○ P ⊢ ○ Q).
   Proof. apply ltl_next_mono_pre. Qed.
 
-  (** Restating ltl_always lemmas *)
+  (** Restating ltl_always lemmas for bi_intuitionistically *)
 
   Lemma ltl_always_unfold (P : tProp) :
     □ P ⊣⊢ P ∧ ○ □ P.
@@ -887,8 +870,6 @@ Section ltl_derived_rules.
   Context {Rel : S → L → S → Prop}.
 
   Notation tProp := (tProp S L Rel).
-
-  (** DERIVED RULES *)
 
   Lemma ltl_next_emp :
     True ⊢ ○ True : tProp.
@@ -987,12 +968,11 @@ Section ltl_derived_rules.
     (□ P ∧ ○ Q) ⊢ (○ (Q ∧ □ P)).
   Proof. by rewrite bi.and_comm {1}ltl_always_next ltl_next_and. Qed.
 
-  Lemma ltl_always_unseal' (P:tProp) : 
+  Lemma ltl_intuitionistically_unseal (P:tProp) : 
     (□ P)%I ≡ (∀ n, ○^n P)%I.
   Proof.   
     rewrite !bi_intuitionistically_always.
-    rewrite ltl_always_unseal.
-    done.
+    by rewrite ltl_always_unseal.
   Qed.
 
   Lemma ltl_always_idemp (P : tProp) :
@@ -1005,9 +985,9 @@ Section ltl_derived_rules.
   Lemma ltl_always_coind (P Q : tProp) :
     □ (P → (Q ∧ ○ (P ∨ □ Q))) ⊢ P → □ Q.
   Proof.
-    rewrite !ltl_always_unseal'.
+    rewrite !ltl_intuitionistically_unseal.
     iIntros "H".
-    iEval (rewrite !ltl_always_unseal').
+    iEval (rewrite !ltl_intuitionistically_unseal).
     iIntros "HP" (n).
     iInduction n as [|n IHn] forall (P Q).
     { simpl. iSpecialize ("H" $! 0). iDestruct ("H" with "HP") as "[HQ _]". done. }
@@ -1022,7 +1002,8 @@ Section ltl_derived_rules.
     iApply ltl_always_elim. iApply ltl_always_next_comm. iApply ltl_always_next.
     iIntros "!> [H H']".
     iDestruct "H" as "[HP|HQ]"; last first.
-    { iDestruct (ltl_always_unseal' with "HQ") as "HQ". iApply "HQ". }
+    { iDestruct (ltl_intuitionistically_unseal with "HQ") as "HQ".
+      iApply "HQ". }
     iApply ("IHn" with "[H'] HP").
     iIntros (m).
     iApply "H'".

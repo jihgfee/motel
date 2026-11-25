@@ -156,7 +156,7 @@ Section ltl_now_lemmas.
   (* OBS: This is needed as destruct pattern turns terms into sep *)
   Global Instance into_sep_now (ϕ ψ : option (S * option L) → Prop) :
     IntoSep (↓ (ϕ ⟨⟨and⟩⟩ ψ):tProp) (↓ ϕ) (↓ ψ).
-  Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_and. Qed.
+  Proof. rewrite /IntoSep. by rewrite bi_sep_and ltl_now_and. Qed.
 
   Lemma ltl_now_pure (P : option (S * option L) → Prop) :
     ↓ P ⊢ ∃ osl, ⌜P osl⌝ : tProp.
@@ -326,7 +326,7 @@ Section ltl_now_state_label_lemmas.
     ↓s' P ⊢@{tProp} ○ ↓s' Qs.
   Proof.
     iIntros (Hback HPQ) "Hs".
-    iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
+    iDestruct (bi_dup with "Hs") as "[Hs Hs']".
     iDestruct (ltl_lbl_state with "Hs'") as (l) "Hl".
     { apply Hback. }    
     iApply (trace_steps_label_rel with "[$Hs $Hl]").
@@ -340,10 +340,10 @@ Section ltl_now_state_label_lemmas.
   Proof.
     intros Hback Hfwd.
     iIntros "Hs".
-    iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
+    iDestruct (bi_dup with "Hs") as "[Hs Hs']".
     iDestruct (ltl_lbl_state with "Hs'") as (l) "Hl".
     { apply Hback. }
-    iDestruct (ltl_dup with "Hl") as "[Hl Hl']".
+    iDestruct (bi_dup with "Hl") as "[Hl Hl']".
     iFrame. clear Hback.
     iDestruct (trace_steps_label_rel _ l (λ s2', ∃ s1' : S, Rel s1 l s1' ∧ ϕ s1' s2') with "[$Hs $Hl]") as "H".
     { intros. specialize (Hfwd _ _ _ H H0) as [x Hx]. exists x. eapply Hx. }
@@ -435,7 +435,7 @@ Section ltl_now_state_label_lemmas.
   Proof.
     iSplit.
     - iIntros "H".
-      iDestruct (ltl_dup with "H") as "[H H']".
+      iDestruct (bi_dup with "H") as "[H H']".
       iDestruct (ltl_st with "H'") as (s) "H'".
       { by destruct osl. }
       iCombine "H H'" as "H".
@@ -454,7 +454,7 @@ Section ltl_now_state_label_lemmas.
   Proof.
     iSplit.
     - iIntros "H".
-      iDestruct (ltl_dup with "H") as "[H H']".
+      iDestruct (bi_dup with "H") as "[H H']".
       iDestruct (ltl_lbl with "H'") as (l) "H'".
       { intros. destruct osl as [[?[]]|]; simplify_eq; naive_solver. }
       iCombine "H H'" as "H".
@@ -547,7 +547,7 @@ Section ltl_now_state_prod.
   (* OBS: This is needed as destruct pattern turns terms into sep *)
   Global Instance into_sep_now_prod (s1 : S1) (s2 : S2) :
     IntoSep (↓s (s1,s2):tProp) (↓fs fst s1) (↓fs snd s2).
-  Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_prod_and. Qed.
+  Proof. rewrite /IntoSep. by rewrite bi_sep_and ltl_now_prod_and. Qed.
 
 End ltl_now_state_prod.
 
@@ -595,7 +595,7 @@ Section ltl_now_label_prod.
   (* OBS: This is needed as destruct pattern turns terms into sep *)
   Global Instance into_sep_now_label_prod (l1 : L1) (l2 : L2) :
     IntoSep (↓l (l1,l2):tProp) (↓fl fst l1) (↓fl snd l2).
-  Proof. rewrite /IntoSep. by rewrite ltl_sep_and ltl_now_label_prod_and. Qed.
+  Proof. rewrite /IntoSep. by rewrite bi_sep_and ltl_now_label_prod_and. Qed.
 
 End ltl_now_label_prod.
 

@@ -294,7 +294,6 @@ Section ltl_axioms.
 
   (** Next *)
 
-  (* N○*)
   Lemma ltl_next_taut' (P : tProp) :
     (True ⊢ P) → (True ⊢ ○ P).
   Proof.
@@ -305,7 +304,6 @@ Section ltl_axioms.
     destruct tr as [[[]|]]; intros; eapply HP; done.
   Qed.
 
-  (* K○ *)
   Lemma ltl_next_mono_strong (P Q : tProp) :
     ○ (P → Q) ⊢ ○ P → ○ Q.
   Proof.
@@ -416,7 +414,6 @@ Section ltl_axioms.
     (□ P = ∀ n, ○^n P)%I.
   Proof. rewrite ltl_always_unseal. unseal. rewrite /ltl_always_def. unseal. done. Qed.
 
-  (* N□ *)
   Lemma ltl_always_taut P :
     (True ⊢ P) → (True ⊢ □ P).
   Proof.
@@ -430,7 +427,6 @@ Section ltl_axioms.
     done.
   Qed.
 
-  (* K□ *)
   Lemma ltl_always_mono_strong_pre (P Q : tProp) :
     □ (P → Q) ⊢ □ P → □ Q.
   Proof.
@@ -482,7 +478,6 @@ Section ltl_lemmas.
     simpl. done.
   Qed.
 
-  (* A5(?) - A5 ties until to its unfolding, consequently tying always to its unfolding *)
   Lemma ltl_always_unfold_pre_2 (P : tProp) :
     P ∧ ○ □ P ⊢ □ P.
   Proof.
@@ -496,7 +491,6 @@ Section ltl_lemmas.
     etrans; [apply (forall_elim n)|]. done.
   Qed.
 
-  (* A4 *)
   Lemma ltl_always_intro_pre (P : tProp) :
     □ (P → ○ P) ⊢ P → □ P.
   Proof.
@@ -698,14 +692,14 @@ Section ltl_bi_typeclasses.
 
   Global Instance ltl_affine : BiAffine (@ltlI S L Rel) | 0.
   Proof. intros P. exact: pure_intro. Qed.
-  (* Also add this to the global hint database, otherwise [eauto] won't work for
-many lemmas that have [BiAffine] as a premise. *)
+  (* Also add this to the global hint database, otherwise [eauto]
+     won't work for many lemmas that have [BiAffine] as a premise. *)
 
 End ltl_bi_typeclasses.
 
 Global Hint Immediate ltl_affine : core.
 
-(* OBS: This seems to be needed to avoid collision with FromImpl *)
+(* This is needed to avoid collision with FromImpl *)
 Global Remove Hints class_instances.from_impl_impl : typeclass_instances.
 
 (** extra BI instances *)
@@ -746,6 +740,38 @@ End restate.
 Ltac unseal := rewrite !ltl_unseal /=.
 End tProp.
 
+Section helper_lemmas.
+  Context {S L : Type}.
+  Context {Rel : S → L → S → Prop}.
+
+  Notation tProp := (tProp S L Rel).
+
+  Import tProp.
+
+  Lemma impl_intro_l (P Q : tProp) :
+    (⊢ P → Q) → (P ⊢ Q).
+  Proof. iIntros (HPQ) "HP". by iApply HPQ. Qed.
+  Lemma impl_intro_r (P Q : tProp) :
+    (P ⊢ Q) → (⊢ P → Q).
+  Proof. iIntros (HPQ) "HP". by rewrite HPQ. Qed.
+
+  Lemma bi_sep_and (P Q : tProp) :
+    P ∗ Q ⊣⊢ P ∧ Q.
+  Proof. constructor. intros tr. unseal. done. Qed.
+  Lemma bi_wand_impl (P Q : tProp) :
+    (P -∗ Q) ⊣⊢ (P → Q).
+  Proof. constructor. intros tr. unseal. done. Qed.
+
+  Lemma bi_dup (P : tProp) : P ⊢ P ∧ P.
+  Proof. iIntros "H". iFrame. Qed.
+
+End helper_lemmas.
+
+(* Override combine functionality that turns hyps into sep *)
+Global Instance ltl_and_combine {S L Rel} (P Q : tProp S L Rel) :
+  CombineSepAs P Q (P ∧ Q) | 10.
+Proof. by rewrite /CombineSepAs bi_sep_and. Qed.
+
 Global Instance ltl_next_mono' {S L Rel} :
   Proper ((⊢) ==> (⊢)) (@ltl_next S L Rel).
 Proof.
@@ -753,6 +779,7 @@ Proof.
   constructor.
   intros. by apply H.
 Qed.
+
 Global Instance ltl_next_flip_mono' {S L Rel} :
   Proper (flip (⊢) ==> flip (⊢)) (@ltl_next S L Rel).
 Proof.
@@ -783,41 +810,14 @@ Section ltl_axioms.
     rewrite left_id. done.
   Qed.
 
-  Lemma impl_intro_l (P Q : tProp) :
-    (⊢ P → Q) → (P ⊢ Q).
-  Proof. iIntros (HPQ) "HP". by iApply HPQ. Qed.
-  Lemma impl_intro_r (P Q : tProp) :
-    (P ⊢ Q) → (⊢ P → Q).
-  Proof. iIntros (HPQ) "HP". by rewrite HPQ. Qed.
-
-  Lemma bi_sep_and (P Q : tProp) :
-    P ∗ Q ⊣⊢ P ∧ Q.
-  Proof. constructor. intros tr. unseal. done. Qed.
-  Lemma bi_wand_impl (P Q : tProp) :
-    (P -∗ Q) ⊣⊢ (P → Q).
-  Proof. constructor. intros tr. unseal. done. Qed.
-
-  Lemma ltl_dup (P : tProp) : P ⊢ P ∧ P.
-  Proof. iIntros "H". iFrame. Qed.
-
-  Lemma ltl_sep_and (P Q : tProp) :
-    P ∗ Q ⊣⊢ P ∧ Q.
-  Proof. done. Qed.
-
-  Lemma ltl_wand_impl (P Q : tProp) :
-    (P -∗ Q) ⊣⊢ (P → Q).
-  Proof. done. Qed.
-
   (** AXIOMS *)
 
   (** ltl_next lemmas *)
 
-  (* N○*)
   Lemma ltl_next_taut (P : tProp) :
     (⊢ P) → (⊢ ○ P).
   Proof. apply ltl_next_taut'. Qed.
 
-  (* A2 *)
   Lemma ltl_next_not (P : tProp) :
     ¬ ○ P ⊣⊢ ○ (¬ P).
   Proof.
@@ -903,7 +903,6 @@ Section ltl_axioms.
     □ P ⊢ P.
   Proof. rewrite ltl_always_unfold. iIntros "[$ _]". Qed.
 
-  (* Actual A1 / K□ *)
   Lemma ltl_always_mono_strong (P Q : tProp) :
     □ (P → Q) ⊢ □ P → □ Q.
   Proof. rewrite !bi_intuitionistically_always. apply ltl_always_mono_strong_pre. Qed.
@@ -918,8 +917,6 @@ Section ltl_derived_rules.
 
   (** DERIVED RULES *)
 
-  (* Next *)
-
   Lemma ltl_next_emp :
     True ⊢ ○ True : tProp.
   Proof. by apply ltl_next_taut. Qed.
@@ -928,7 +925,7 @@ Section ltl_derived_rules.
     ○ False ⊢ False : tProp.
   Proof.
     iIntros "H".
-    iDestruct (ltl_dup with "H") as "[H Hf]".
+    iDestruct (bi_dup with "H") as "[H Hf]".
     iAssert (○ (False → False))%I with "[H]" as "H'".
     { iApply (ltl_next_mono_strong with "[] H"). iApply ltl_next_taut. eauto. }
     rewrite -ltl_next_not.
@@ -1032,11 +1029,6 @@ Section ltl_derived_rules.
     apply ltl_always_idemp_pre.
   Qed.
 
-  (* Override combine functionality that turns hyps into sep *)
-  Global Instance ltl_and_combine (P Q : tProp) :
-    CombineSepAs P Q (P ∧ Q) | 10.
-  Proof. by rewrite /CombineSepAs bi_sep_and. Qed.
-
   Lemma ltl_always_coind (P Q : tProp) :
     □ (P → (Q ∧ ○ (P ∨ □ Q))) ⊢ P → □ Q.
   Proof.
@@ -1048,12 +1040,12 @@ Section ltl_derived_rules.
     { simpl. iSpecialize ("H" $! 0). iDestruct ("H" with "HP") as "[HQ _]". done. }
     replace (Datatypes.S n) with (1 + n) by lia.
     rewrite !ltl_next_iter_sum.
-    iDestruct (ltl_dup with "H") as "[H H']".
+    iDestruct (bi_dup with "H") as "[H H']".
     iSpecialize ("H" $! 0). simpl.
     iDestruct ("H" with "HP") as "[HQ H]".
     rewrite ltl_iter_forall.
     iCombine "H H'" as "H". rewrite ltl_next_and.
-    iRevert "H". rewrite ltl_wand_impl. iApply ltl_next_mono_strong.
+    iRevert "H". rewrite bi_wand_impl. iApply ltl_next_mono_strong.
     iApply ltl_always_elim. iApply ltl_always_next_comm. iApply ltl_always_next.
     iIntros "!> [H H']".
     iDestruct "H" as "[HP|HQ]"; last first.
@@ -1070,8 +1062,6 @@ Section ltl_proofmode.
   Context {Rel : S → L → S → Prop}.
 
   Notation tProp := (tProp S L Rel).
-
-  (* Proofmode support for next modality *)
 
   Global Instance into_and_next (P Q1 Q2 : tProp) :
     IntoAnd false P Q1 Q2 →
@@ -1214,17 +1204,13 @@ Section ltl_proofmode.
     (∃ x, ○^n Φ x)%I ⊣⊢@{tProp} ○^n ∃ x, Φ x.
   Proof.
     iSplit.
-    - iIntros "HP". 
-      iDestruct "HP" as (x) "HP".
+    - iDestruct 1 as (x) "HP".
       iInduction n as [|n IHn].
       { iExists x. done. }
-      simpl. iModIntro. iDestruct ("IHn" with "HP") as "HP".
-      done.
+      iModIntro. by iDestruct ("IHn" with "HP") as "HP".
     - iIntros "HP".
-      iInduction n as [|n IHn].
-      { done. }
-      simpl. rewrite -ltl_next_exists. iModIntro. iApply "IHn".
-      done.
+      iInduction n as [|n IHn]; [done|].
+      rewrite -ltl_next_exists. iModIntro. by iApply "IHn".
   Qed.
 
 End ltl_proofmode.

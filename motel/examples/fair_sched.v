@@ -53,7 +53,7 @@ Section fair_sched.
     iApply (ltl_eventually_ind_strong with "[] Hl").
     iIntros "!> [Hl|[_ IH]] Hs".
     { iModIntro. iFrame. }
-    iDestruct (ltl_dup with "Hs") as "[Hs Hs']".
+    iDestruct (bi_dup with "Hs") as "[Hs Hs']".
     iDestruct (step with "Hs'") as (l) "[Hl [[-> Hs']|[Hl' Hs']]]".
     { iModIntro. iFrame. }
     iEval (rewrite -ltl_next_eventually). iModIntro.

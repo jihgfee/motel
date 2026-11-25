@@ -151,7 +151,7 @@ Module parity_example.
     (↓l a ∧ ○ ↓s (q1,s1)).
   Proof.
     iIntros "Hs".
-    iDestruct (ltl_dup with "Hs") as "[Hq Hs]".
+    iDestruct (bi_dup with "Hs") as "[Hq Hs]".
     iDestruct (q0_step with "[Hq]") as "Hq".
     { iApply (ltl_now_mono with "Hq").
       intros [[]|]; naive_solver. }
@@ -170,7 +170,7 @@ Module parity_example.
     (↓l b ∧ ○ ↓s (q0,s0)).
   Proof.
     iIntros "Hs".
-    iDestruct (ltl_dup with "Hs") as "[Hq Hs]".
+    iDestruct (bi_dup with "Hs") as "[Hq Hs]".
     iDestruct (q0_step with "[Hq]") as "Hq".
     { iApply (ltl_now_mono with "Hq").
       intros [[]|]; naive_solver. }
@@ -190,7 +190,7 @@ Module parity_example.
     (↓l b ∧ ○ ↓s (q0,s1)).
   Proof.
     iIntros "Hs".
-    iDestruct (ltl_dup with "Hs") as "[Hq Hs]".
+    iDestruct (bi_dup with "Hs") as "[Hq Hs]".
     iDestruct (q0_step with "[Hq]") as "Hq".
     { iApply (ltl_now_mono with "Hq").
       intros [[]|]; naive_solver. }

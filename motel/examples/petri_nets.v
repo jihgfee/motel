@@ -26,10 +26,10 @@ Section petri_nets.
   Lemma petri_lbl_enabled t : ↓l t ⊢ ↓s' (enabled t) : tProp.
   Proof.
     iIntros "Hl".
-    iDestruct (bi_dup with "Hl") as "[Hl Hl']".
+    iDestruct (bi.and_idem with "Hl") as "[Hl Hl']".
     iDestruct (ltl_st with "Hl'") as (s) "Hs".
     { intros [[]|]; eauto. naive_solver. }
-    iDestruct (bi_dup with "Hs") as "[Hs Hs']".
+    iDestruct (bi.and_idem with "Hs") as "[Hs Hs']".
     iDestruct (trace_steps_label with "[$Hs' $Hl]") as (s' Hrel) "_".
     inversion Hrel.
     iApply (ltl_now_mono_state with "Hs").
@@ -251,7 +251,7 @@ Module petri_nets_example.
     iApply (ltl_always_intro with "[] Hs").
     iIntros "!> Hs".
     iDestruct "Hs" as (????) "Hs".
-    iDestruct (bi_dup with "Hs") as "[Hs Hs']".
+    iDestruct (bi.and_idem with "Hs") as "[Hs Hs']".
     iDestruct (petri_st_lbl with "Hs'") as (l) "Hl".
     destruct l.
     - iDestruct (t0_fire with "Hl Hs") as "Hs".
@@ -289,7 +289,7 @@ Module petri_nets_example.
     ↓s {[p0:=0;p1:=0;p2:=0;p3:=0]} ⊢@{tProp} ◊ ↓s' (λ s, (∃ x, s !! p3 = Some x ∧ x > 0)%type).
   Proof.
     iIntros "Hs".
-    iDestruct (bi_dup with "Hs") as "[Hs Hs']".
+    iDestruct (bi.and_idem with "Hs") as "[Hs Hs']".
     iDestruct (petri_inf with "Hs'") as "Hinf".
     iRevert "Hs".
     iDestruct (t0_enabled with "Hinf") as "#Ht0".
@@ -373,7 +373,7 @@ Module petri_nets_example.
       iEval (rewrite -ltl_next_eventually).
       iAssert (○ ((↓s' λ s : gmap place nat, (∃ x, s !! p1 = Some x ∧ x > 0)%type) ∨
                  (↓s' enabled input_arcs t3)))%I with "[Hs Hn1]" as "H".
-      { iDestruct (bi_dup with "Hs") as "[Hs Hs']".
+      { iDestruct (bi.and_idem with "Hs") as "[Hs Hs']".
         iDestruct (petri_st_lbl with "Hs") as (l) "Hl".
         destruct n1.
         {

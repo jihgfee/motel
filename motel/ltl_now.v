@@ -325,7 +325,7 @@ Section ltl_now_state_label_lemmas.
     ↓s' φ ⊢@{tProp} ○ ↓s' Qs.
   Proof.
     iIntros (Hback HPQ) "Hs".
-    iDestruct (bi_dup with "Hs") as "[Hs Hs']".
+    iDestruct (bi.and_idem with "Hs") as "[Hs Hs']".
     iDestruct (ltl_lbl_state with "Hs'") as (l) "Hl".
     { apply Hback. }    
     iApply (trace_steps_label_rel with "[$Hs $Hl]").
@@ -339,10 +339,10 @@ Section ltl_now_state_label_lemmas.
   Proof.
     intros Hback Hfwd.
     iIntros "Hs".
-    iDestruct (bi_dup with "Hs") as "[Hs Hs']".
+    iDestruct (bi.and_idem with "Hs") as "[Hs Hs']".
     iDestruct (ltl_lbl_state with "Hs'") as (l) "Hl".
     { apply Hback. }
-    iDestruct (bi_dup with "Hl") as "[Hl Hl']".
+    iDestruct (bi.and_idem with "Hl") as "[Hl Hl']".
     iFrame. clear Hback.
     iDestruct (trace_steps_label_rel _ l (λ s2', ∃ s1' : S, Rel s1 l s1' ∧ ϕ s1' s2') with "[$Hs $Hl]") as "H".
     { intros. specialize (Hfwd _ _ _ H H0) as [x Hx]. exists x. eapply Hx. }
@@ -433,7 +433,7 @@ Section ltl_now_state_label_lemmas.
   Proof.
     iSplit.
     - iIntros "H".
-      iDestruct (bi_dup with "H") as "[H H']".
+      iDestruct (bi.and_idem with "H") as "[H H']".
       iDestruct (ltl_st with "H'") as (s) "H'".
       { by destruct osl. }
       iCombine "H H'" as "H".
@@ -452,7 +452,7 @@ Section ltl_now_state_label_lemmas.
   Proof.
     iSplit.
     - iIntros "H".
-      iDestruct (bi_dup with "H") as "[H H']".
+      iDestruct (bi.and_idem with "H") as "[H H']".
       iDestruct (ltl_lbl with "H'") as (l) "H'".
       { intros. destruct osl as [[?[]]|]; simplify_eq; naive_solver. }
       iCombine "H H'" as "H".

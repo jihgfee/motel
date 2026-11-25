@@ -762,9 +762,6 @@ Section helper_lemmas.
     (P -∗ Q) ⊣⊢ (P → Q).
   Proof. constructor. intros tr. unseal. done. Qed.
 
-  Lemma bi_dup (P : tProp) : P ⊢ P ∧ P.
-  Proof. iIntros "H". iFrame. Qed.
-
 End helper_lemmas.
 
 (* Override combine functionality that turns hyps into sep *)
@@ -925,7 +922,7 @@ Section ltl_derived_rules.
     ○ False ⊢ False : tProp.
   Proof.
     iIntros "H".
-    iDestruct (bi_dup with "H") as "[H Hf]".
+    iDestruct (bi.and_idem with "H") as "[H Hf]".
     iAssert (○ (False → False))%I with "[H]" as "H'".
     { iApply (ltl_next_mono_strong with "[] H"). iApply ltl_next_taut. eauto. }
     rewrite -ltl_next_not.
@@ -1040,7 +1037,7 @@ Section ltl_derived_rules.
     { simpl. iSpecialize ("H" $! 0). iDestruct ("H" with "HP") as "[HQ _]". done. }
     replace (Datatypes.S n) with (1 + n) by lia.
     rewrite !ltl_next_iter_sum.
-    iDestruct (bi_dup with "H") as "[H H']".
+    iDestruct (bi.and_idem with "H") as "[H H']".
     iSpecialize ("H" $! 0). simpl.
     iDestruct ("H" with "HP") as "[HQ H]".
     rewrite ltl_iter_forall.

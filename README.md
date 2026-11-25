@@ -31,6 +31,28 @@ The dependencies can then be installed via
 
 `make builddep`
 
+## Overview of Development
+
+The development defines a linear temporal logic closely resembling LTL, with higher-order impredicative quantification and fixpoints.
+
+[./motel/trace.v](./motel/trace.v) defines the possibly-finite traces over which the temporal logic is defined.
+
+[./motel/ltl.v](./motel/ltl.v) defines the temporal logic foundation, giving definitions of the connectives required by MoSeL; notably, entailment `⊢`, the propositional connectives `True`, `False`, `∧`, `∨`, `∀`, `∃`, `→`, and the persistent modality.
+The propositional connectives are defined as pointwise lifting of the corresponding Rocq connectives over traces.
+The persistent modality is defined as the "globally" temporal modality, which we derive from the next modality `◦ P ≜ λ tr, P (tail tr)` as `□ 𝑃  ≜ ∀ n, ◦^n P`.
+
+[./motel/ltl_fixpoints.v](./motel/ltl_fixpoints.v) defines the temporal logic until `∪` and eventually `◊` modalities.
+The modalities are defined in terms of Knaster-Tarski fixpoints: `P ∪ Q ≜ μ X. Q ∨ (P ∧ ◦ X)` and `◊ P ≜ True ∪ Q`.
+
+[./motel/ltl_now.v](./motel/ltl_now.v) defines a point connective for assertions over the head of a trace `↓φ ≜ λ tr, ϕ (head tr)`, along with projection variants for asserting equality with exact states and labels.
+It also includes lemmas for deriving logic-level assertions from a concrete model.
+
+[./motel/ltl_adequacy.v](./motel/ltl_adequacy.v) defines the adequacy theorem of MoTeL for extracting meta-level assertions about traces from temporal logic-level proofs.
+
+[./motel/ltl_classical.v](./motel/ltl_classical.v) axiomatise excluded middle, and derive a temporal logic level variant, along with consequential lemmas.
+
+[./motel/examples/](./motel/examples/) contains a suite of examples using MoTeL.
+
 ## Overview of Proofmode
 
 The proofmode interface can be instantiated by giving a labelled transition system (LTS) model by providing a notion of state (S), label (L), and transition relation (R).

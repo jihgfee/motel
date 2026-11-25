@@ -1,5 +1,5 @@
-From iris.proofmode Require Import modality_instances.
 From iris.bi Require Export fixpoint_mono.
+From iris.proofmode Require Import modality_instances.
 From motel Require Export ltl.
 
 Section ltl_until.
@@ -520,8 +520,7 @@ Section ltl_until.
     iFrame "#∗".
   Qed.    
 
-  (* OBS: This is necessary to iMod with goals such as [□ ◊ P].
-     Not entirely obvious why goal must preserve [□ P], instead of [□ R] *)
+  (* This is necessary to iMod with goals such as [□ ◊ P]. *)
   Global Instance into_until_always (P Q R : tProp) :
     FromUntil Q R P →
     IntoUntil P Q R →
@@ -542,7 +541,7 @@ Section ltl_until.
     rewrite -ltl_always_until_idemp. done.
   Qed.
 
-  (* OBS: This seems stronger than [from_until_always], but is not compatible with 
+  (* This seems stronger than [from_until_always], but is not compatible with 
      [into_until_always] *)
   Global Instance from_until_always' (P Q R : tProp) :
     FromUntil Q R P →

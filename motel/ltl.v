@@ -1199,7 +1199,6 @@ Section ltl_proofmode.
     rewrite HPQ. specialize (H true). simpl in *. rewrite -H. done.
   Qed.
 
-  (* TODO: Move this *)
   Lemma ltl_iter_exists {A} n (Φ : A → tProp) :
     (∃ x, ○^n Φ x)%I ⊣⊢@{tProp} ○^n ∃ x, Φ x.
   Proof.
@@ -1207,10 +1206,10 @@ Section ltl_proofmode.
     - iDestruct 1 as (x) "HP".
       iInduction n as [|n IHn].
       { iExists x. done. }
-      iModIntro. by iDestruct ("IHn" with "HP") as "HP".
+      simpl. iModIntro. by iDestruct ("IHn" with "HP") as "HP".
     - iIntros "HP".
       iInduction n as [|n IHn]; [done|].
-      rewrite -ltl_next_exists. iModIntro. by iApply "IHn".
+      simpl. rewrite -ltl_next_exists. iModIntro. by iApply "IHn".
   Qed.
 
 End ltl_proofmode.

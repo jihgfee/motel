@@ -23,7 +23,7 @@ motel/ltl.v
 motel/ltl_fixpoints.v
 motel/ltl_now.v
 motel/ltl_adequacy.v
-motel/classical.v
+motel/ltl_classical.v
 motel/examples/basics.v
 motel/examples/increment.v
 motel/examples/fair_coin.v

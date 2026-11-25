@@ -75,8 +75,7 @@ Section ltl_adequacy.
   Proof.
     etrans; [apply ltl_adequate_equiv; apply ltl_always_next_equiv|].
     setoid_rewrite <-ltl_next_iter_adequate.
-    rewrite ltl_forall_unseal.
-    done.
+    by rewrite ltl_forall_unseal.
   Qed.
 
   Lemma ltl_eventually_adequate (P : tProp) tr :
@@ -84,8 +83,7 @@ Section ltl_adequacy.
   Proof.
     etrans; [apply ltl_adequate_equiv; apply ltl_eventually_next_equiv|].
     setoid_rewrite <-ltl_next_iter_adequate.
-    rewrite ltl_exist_unseal.
-    done.
+    by rewrite ltl_exist_unseal.
   Qed.
 
 End ltl_adequacy.

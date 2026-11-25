@@ -1,4 +1,4 @@
-From motel Require Import ltl ltl_fixpoints ltl_now ltl_adequacy classical.
+From motel Require Import ltl ltl_fixpoints ltl_now ltl_adequacy ltl_classical.
 
 Module stenning_example.
 
@@ -424,7 +424,7 @@ Module stenning_example.
       iModIntro. iExFalso. iApply "Hm". done.
   Qed.
 
-  (* OBS: Hypothesis for this lemma is only needed for [stenning_B] *)
+  (* Hypothesis for this lemma is only needed for [stenning_B] *)
   Lemma stenning_B_always_try_recv :
     (□ ◊ ∃ l, ↓l l) ⊢ □ ◊ ∃ m, ↓l (B, Recv B m) : tProp.
   Proof.

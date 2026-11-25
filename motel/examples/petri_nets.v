@@ -363,7 +363,6 @@ Module petri_nets_example.
       iDestruct "Hs" as (????) "Hs".
       destruct n2; last first.
       { iModIntro.
-        (* TODO: Make a proper combine instance for ltl_now_state *)
         iCombine "Hs Hn1" as "Hs".
         iApply (ltl_now_mono with "Hs").
         intros [[]|]=> /=; intros H; simplify_eq; eauto.
@@ -372,7 +371,6 @@ Module petri_nets_example.
         eexists _. split; [set_solver|lia].
       }
       iEval (rewrite -ltl_next_eventually).
-      (* TODO: add destruct typeclass for next *)
       iAssert (○ ((↓s' λ s : gmap place nat, (∃ x, s !! p1 = Some x ∧ x > 0)%type) ∨
                  (↓s' enabled input_arcs t3)))%I with "[Hs Hn1]" as "H".
       { iDestruct (bi_dup with "Hs") as "[Hs Hs']".

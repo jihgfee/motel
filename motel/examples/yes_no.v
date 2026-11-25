@@ -1,4 +1,4 @@
-From motel Require Import ltl ltl_fixpoints ltl_now classical.
+From motel Require Import ltl ltl_fixpoints ltl_now ltl_classical.
 
 Module yes_no_example.
 

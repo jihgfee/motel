@@ -37,12 +37,12 @@ The development defines a linear temporal logic closely resembling LTL, with hig
 
 [./motel/trace.v](./motel/trace.v) defines the possibly-finite traces over which the temporal logic is defined.
 
-[./motel/ltl.v](./motel/ltl.v) defines the temporal logic foundation, giving definitions of the connectives required by MoSeL; notably, entailment `⊢`, the propositional connectives `True`, `False`, `∧`, `∨`, `∀`, `∃`, `→`, and the persistent modality.
+[./motel/ltl.v](./motel/ltl.v) defines the temporal logic foundation, and MoSeL instantiation, giving definitions for the connectives required by MoSeL; entailment `⊢`, the propositional connectives `True`, `False`, `∧`, `∨`, `∀`, `∃`, `→`, and the persistent modality `□`.
 The propositional connectives are defined as pointwise lifting of the corresponding Rocq connectives over traces.
-The persistent modality is defined as the "globally" temporal modality, which we derive from the next modality `◦ P ≜ λ tr, P (tail tr)` as `□ 𝑃  ≜ ∀ n, ◦^n P`.
+The persistent modality is defined as the "globally" temporal modality, which we derive from the next modality `○ P ≜ λ tr, P (tail tr)` as `□ 𝑃  ≜ ∀ n, ○^n P`.
 
 [./motel/ltl_fixpoints.v](./motel/ltl_fixpoints.v) defines the temporal logic until `∪` and eventually `◊` modalities.
-The modalities are defined in terms of Knaster-Tarski fixpoints: `P ∪ Q ≜ μ X. Q ∨ (P ∧ ◦ X)` and `◊ P ≜ True ∪ Q`.
+The modalities are defined in terms of Knaster-Tarski fixpoints: `P ∪ Q ≜ μ X. Q ∨ (P ∧ ○ X)` and `◊ P ≜ True ∪ Q`.
 
 [./motel/ltl_now.v](./motel/ltl_now.v) defines a point connective for assertions over the head of a trace `↓φ ≜ λ tr, ϕ (head tr)`, along with projection variants for asserting equality with exact states and labels.
 It also includes lemmas for deriving logic-level assertions from a concrete model.

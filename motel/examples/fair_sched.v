@@ -29,7 +29,7 @@ Section fair_sched.
     - iExists l. iFrame. iRight. iFrame. done.
   Qed.
 
-  Lemma step_succ_alt i :
+  Lemma step_succ i :
     ↓s i ∧ ↓l (f i) ⊢ ○ ↓s (i+1) : tProp.
   Proof.
     iIntros "Hsl".
@@ -37,7 +37,7 @@ Section fair_sched.
     by inversion Hsteps; simplify_eq.
   Qed.
 
-  Lemma step_succ i :
+  Lemma step_succ_alt i :
     ↓s i ∧ ↓l (f i) ⊢ ○ ↓s (i+1) : tProp.
   Proof.
     iIntros "[Hs Hl]".

@@ -11,10 +11,10 @@ Module fair_coin_example.
 
   Notation tProp := (tProp state label steps).
 
-  Lemma step :
-    ∀ b, ↓s b ⊢
-         (↓l b ∧ ○ ↓s (negb b)) ∨
-         (↓l (negb b) ∧ ○ ↓s b) : tProp.
+  Lemma step b : 
+    ↓s b ⊢
+    (↓l b ∧ ○ ↓s (negb b)) ∨
+      (↓l (negb b) ∧ ○ ↓s b) : tProp.
   Proof.
     iIntros (i) "Hs".
     iDestruct (trace_steps with "Hs")
@@ -25,10 +25,10 @@ Module fair_coin_example.
     - iRight. iFrame.
   Qed.
 
-  Lemma step_succ :
-    ∀ b, (↓s b ∧ ↓l b)%I ⊢ ○ ↓s (negb b) : tProp.
+  Lemma step_succ b :
+    ↓s b ∧ ↓l b ⊢ ○ ↓s (negb b) : tProp.
   Proof.
-    iIntros (b) "[Hs Hl]".
+    iIntros "[Hs Hl]".
     iDestruct (step with "Hs") as "[[_ $]|(Hl'&Hs)]".
     iDestruct (ltl_now_lbl_agree with "Hl Hl'") as %Heq.
     by destruct b.
@@ -49,21 +49,22 @@ Module fair_coin_example.
     iApply "IH". iFrame.
   Qed.
 
-  Lemma eventual_response b :
-    □ (∀ b, ◊ ↓l b) ⊢ ↓s b → ○ ◊ ↓s (negb b) : tProp.
+  Lemma eventual_flip b :
+    □ (∀ b, ◊ ↓l b) ∧ ◊ ↓s b ⊢ ○ ◊ ↓s (negb b) : tProp.
   Proof.
-    iIntros "#Hfair Hs".
-    iDestruct (eventual_step with "[$Hfair $Hs]") as "Hsl".
-    iMod "Hsl" as "[Hs Hl]".
+    iIntros "[#Hfair Hs]".
+    iMod "Hs".
+    iDestruct (eventual_step with "[$Hfair $Hs]") as ">[Hs Hl]".
     iDestruct (step_succ with "[$Hs $Hl]") as "Hs".
     iModIntro. iModIntro. iApply "Hs".
   Qed.
 
+  (* Restating above lemma to more easily apply adequacy. *)
   Theorem theorem :
     □ (∀ b, ◊ ↓l b) ⊢ ◊ ↓s true → ○ ◊ ↓s false : tProp.
   Proof.
-    iIntros "#Hfair". iIntros ">H". iRevert "H".
-    iApply (eventual_response with "Hfair").
+    iIntros "#Hfair". iIntros "H".
+    iApply (eventual_flip with "[$Hfair $H]").
   Qed.
 
   Theorem theorem_meta

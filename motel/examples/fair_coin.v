@@ -16,7 +16,7 @@ Module fair_coin_example.
     (↓l b ∧ ○ ↓s (negb b)) ∨
       (↓l (negb b) ∧ ○ ↓s b) : tProp.
   Proof.
-    iIntros (i) "Hs".
+    iIntros "Hs".
     iDestruct (trace_steps with "Hs")
       as (l s' Hrel) "[Hl Hs']".
     { eexists _, _. constructor. }
